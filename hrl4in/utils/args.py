@@ -2,13 +2,14 @@ def add_env_args(parser):
     group = parser.add_argument_group("env")
     group.add_argument(
         "--env-type",
-        required=True,
+        default="gibson",
         help="env type: [gibson|interactive_gibson|toy|relmogen]",
         choices=["gibson", "interactive_gibson", "toy", "relmogen"]
     )
     group.add_argument(
         "--config-file",
-        required=True,
+        # required=True,
+        default="tiago_tabletop.yaml",
         help="config yaml file for Gibson environment",
     )
     group.add_argument(

@@ -18,24 +18,30 @@ from hrl4in.utils.args import *
 
 import gibson2
 from gibson2.envs.parallel_env import ParallelNavEnvironment
-from gibson2.envs.locomotor_env import NavigateEnv, NavigateRandomEnv, InteractiveNavigateEnv
+from gibson2.envs.locomotor_env import (
+    NavigateEnv,
+    NavigateRandomEnv,
+    InteractiveNavigateEnv,
+)
 
 from IPython import embed
 import matplotlib.pyplot as plt
 
 
-def evaluate(args,
-             envs,
-             meta_actor_critic,
-             actor_critic,
-             action_mask_choices,
-             subgoal_mask_choices,
-             subgoal_tolerance,
-             device,
-             writer,
-             update=0,
-             count_steps=0,
-             eval_only=False):
+def evaluate(
+    args,
+    envs,
+    meta_actor_critic,
+    actor_critic,
+    action_mask_choices,
+    subgoal_mask_choices,
+    subgoal_tolerance,
+    device,
+    writer,
+    update=0,
+    count_steps=0,
+    eval_only=False,
+):
     observations = envs.reset()
     batch = batch_obs(observations)
     for sensor in batch:
@@ -59,9 +65,15 @@ def evaluate(args,
     subgoal_counts = torch.zeros(envs._num_envs, 1, device=device)
     current_subgoal_reward = torch.zeros(envs._num_envs, 1, device=device)
 
-    current_meta_recurrent_hidden_states = torch.zeros(envs._num_envs, args.hidden_size, device=device)
-    next_meta_recurrent_hidden_states = torch.zeros(envs._num_envs, args.hidden_size, device=device)
-    recurrent_hidden_states = torch.zeros(envs._num_envs, args.hidden_size, device=device)
+    current_meta_recurrent_hidden_states = torch.zeros(
+        envs._num_envs, args.hidden_size, device=device
+    )
+    next_meta_recurrent_hidden_states = torch.zeros(
+        envs._num_envs, args.hidden_size, device=device
+    )
+    recurrent_hidden_states = torch.zeros(
+        envs._num_envs, args.hidden_size, device=device
+    )
     subgoals_done = torch.zeros(envs._num_envs, 1, device=device)
     masks = torch.zeros(envs._num_envs, 1, device=device)
 
@@ -90,22 +102,34 @@ def evaluate(args,
             )
 
             if meta_actor_critic.use_action_masks:
-                action_masks = action_mask_choices.index_select(0, action_mask_indices.squeeze(1))
-                subgoal_masks = subgoal_mask_choices.index_select(0, action_mask_indices.squeeze(1))
+                action_masks = action_mask_choices.index_select(
+                    0, action_mask_indices.squeeze(1)
+                )
+                subgoal_masks = subgoal_mask_choices.index_select(
+                    0, action_mask_indices.squeeze(1)
+                )
             else:
                 action_masks = torch.ones_like(current_action_masks)
                 subgoal_masks = torch.ones_like(current_subgoal_masks)
 
             should_use_new_subgoals = (current_subgoals_steps == 0.0).float()
-            current_subgoals = should_use_new_subgoals * subgoals + \
-                               (1 - should_use_new_subgoals) * current_subgoals
-            current_subgoal_masks = should_use_new_subgoals * subgoal_masks.float() + \
-                                    (1 - should_use_new_subgoals) * current_subgoal_masks
+            current_subgoals = (
+                should_use_new_subgoals * subgoals
+                + (1 - should_use_new_subgoals) * current_subgoals
+            )
+            current_subgoal_masks = (
+                should_use_new_subgoals * subgoal_masks.float()
+                + (1 - should_use_new_subgoals) * current_subgoal_masks
+            )
             current_subgoals *= current_subgoal_masks
-            current_action_masks = should_use_new_subgoals * action_masks + \
-                                   (1 - should_use_new_subgoals) * current_action_masks
-            next_meta_recurrent_hidden_states = should_use_new_subgoals * meta_recurrent_hidden_states + \
-                                                (1 - should_use_new_subgoals) * next_meta_recurrent_hidden_states
+            current_action_masks = (
+                should_use_new_subgoals * action_masks
+                + (1 - should_use_new_subgoals) * current_action_masks
+            )
+            next_meta_recurrent_hidden_states = (
+                should_use_new_subgoals * meta_recurrent_hidden_states
+                + (1 - should_use_new_subgoals) * next_meta_recurrent_hidden_states
+            )
             ideal_next_state = batch["sensor"] + current_subgoals
 
             if eval_only:
@@ -116,7 +140,9 @@ def evaluate(args,
             roll = batch["auxiliary_sensor"][:, 9] * np.pi
             pitch = batch["auxiliary_sensor"][:, 10] * np.pi
             yaw = batch["auxiliary_sensor"][:, 49] * np.pi
-            current_subgoals_rotated = rotate_torch_vector(current_subgoals, roll, pitch, yaw)
+            current_subgoals_rotated = rotate_torch_vector(
+                current_subgoals, roll, pitch, yaw
+            )
             current_subgoals_observation = current_subgoals_rotated
 
             batch["subgoal"] = current_subgoals_observation
@@ -141,8 +167,10 @@ def evaluate(args,
         outputs = envs.step(actions_np)
 
         observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
-        next_obs = [info["last_observation"] if done else obs for obs, done, info in
-                    zip(observations, dones, infos)]
+        next_obs = [
+            info["last_observation"] if done else obs
+            for obs, done, info in zip(observations, dones, infos)
+        ]
 
         prev_batch = batch
 
@@ -163,53 +191,78 @@ def evaluate(args,
             device=device,
         )
         success_masks = torch.tensor(
-            [[float(info["success"])] if done and "success" in info else [0.0]
-             for done, info in zip(dones, infos)],
+            [
+                [float(info["success"])] if done and "success" in info else [0.0]
+                for done, info in zip(dones, infos)
+            ],
             dtype=torch.float,
-            device=device
+            device=device,
         )
         lengths = torch.tensor(
-            [[float(info["episode_length"])] if done and "episode_length" in info else [0.0]
-             for done, info in zip(dones, infos)],
+            [
+                [float(info["episode_length"])]
+                if done and "episode_length" in info
+                else [0.0]
+                for done, info in zip(dones, infos)
+            ],
             dtype=torch.float,
-            device=device
+            device=device,
         )
         collision_steps = torch.tensor(
-            [[float(info["collision_step"])] if done and "collision_step" in info else [0.0]
-             for done, info in zip(dones, infos)],
+            [
+                [float(info["collision_step"])]
+                if done and "collision_step" in info
+                else [0.0]
+                for done, info in zip(dones, infos)
+            ],
             dtype=torch.float,
-            device=device
+            device=device,
         )
         total_energy_cost = torch.tensor(
-            [[float(info["energy_cost"])] if done and "energy_cost" in info else [0.0]
-             for done, info in zip(dones, infos)],
+            [
+                [float(info["energy_cost"])]
+                if done and "energy_cost" in info
+                else [0.0]
+                for done, info in zip(dones, infos)
+            ],
             dtype=torch.float,
-            device=device
+            device=device,
         )
         avg_energy_cost = torch.tensor(
-            [[float(info["energy_cost"]) / float(info["episode_length"])]
-             if done and "energy_cost" in info and "episode_length" in info
-             else [0.0]
-             for done, info in zip(dones, infos)],
+            [
+                [float(info["energy_cost"]) / float(info["episode_length"])]
+                if done and "energy_cost" in info and "episode_length" in info
+                else [0.0]
+                for done, info in zip(dones, infos)
+            ],
             dtype=torch.float,
-            device=device
+            device=device,
         )
         stage_open_door = torch.tensor(
-            [[float(info["stage"] >= 1)] if done and "stage" in info else [0.0]
-             for done, info in zip(dones, infos)],
+            [
+                [float(info["stage"] >= 1)] if done and "stage" in info else [0.0]
+                for done, info in zip(dones, infos)
+            ],
             dtype=torch.float,
-            device=device
+            device=device,
         )
         stage_to_target = torch.tensor(
-            [[float(info["stage"] >= 2)] if done and "stage" in info else [0.0]
-             for done, info in zip(dones, infos)],
+            [
+                [float(info["stage"] >= 2)] if done and "stage" in info else [0.0]
+                for done, info in zip(dones, infos)
+            ],
             dtype=torch.float,
-            device=device
+            device=device,
         )
         collision_rewards = torch.tensor(
-            [[float(info["collision_reward"])] if "collision_reward" in info else [0.0] for info in infos],
+            [
+                [float(info["collision_reward"])]
+                if "collision_reward" in info
+                else [0.0]
+                for info in infos
+            ],
             dtype=torch.float,
-            device=device
+            device=device,
         )
 
         current_episode_reward += rewards
@@ -226,27 +279,37 @@ def evaluate(args,
 
         current_subgoals_steps += 1
 
-        subgoals_diff = (ideal_next_state - next_obs_batch["sensor"]) * current_subgoal_masks
+        subgoals_diff = (
+            ideal_next_state - next_obs_batch["sensor"]
+        ) * current_subgoal_masks
         subgoals_distance = torch.abs(subgoals_diff)
 
-        subgoals_achieved = torch.all(subgoals_distance < subgoal_tolerance, dim=1, keepdim=True)
+        subgoals_achieved = torch.all(
+            subgoals_distance < subgoal_tolerance, dim=1, keepdim=True
+        )
 
         subgoals_done = (
-                subgoals_achieved  # subgoals achieved
-                | (current_subgoals_steps == args.time_scale)  # subgoals time up
-                | (1.0 - masks).byte()  # episode is done
+            subgoals_achieved  # subgoals achieved
+            | (current_subgoals_steps == args.time_scale)  # subgoals time up
+            | (1.0 - masks).byte()  # episode is done
         )
         subgoals_done = subgoals_done.float()
         subgoals_achieved = subgoals_achieved.float()
 
         prev_potential = ideal_next_state - prev_batch["sensor"]
-        prev_potential = torch.norm(prev_potential * current_subgoal_masks, dim=1, keepdim=True)
+        prev_potential = torch.norm(
+            prev_potential * current_subgoal_masks, dim=1, keepdim=True
+        )
 
         current_potential = ideal_next_state - next_obs_batch["sensor"]
-        current_potential = torch.norm(current_potential * current_subgoal_masks, dim=1, keepdim=True)
+        current_potential = torch.norm(
+            current_potential * current_subgoal_masks, dim=1, keepdim=True
+        )
 
         intrinsic_reward = 0.0
-        intrinsic_reward += (prev_potential - current_potential) * args.intrinsic_reward_scaling
+        intrinsic_reward += (
+            prev_potential - current_potential
+        ) * args.intrinsic_reward_scaling
         intrinsic_reward += subgoals_achieved.float() * args.subgoal_achieved_reward
         intrinsic_reward += collision_rewards * args.extrinsic_collision_reward_weight
         intrinsic_reward += rewards * args.extrinsic_reward_weight
@@ -256,82 +319,200 @@ def evaluate(args,
         subgoal_success_rates += subgoals_achieved
         subgoal_lengths += subgoals_done * current_subgoals_steps
         subgoal_counts += subgoals_done
-        current_subgoal_reward *= (1 - subgoals_done)
+        current_subgoal_reward *= 1 - subgoals_done
 
-        current_subgoals = (ideal_next_state - next_obs_batch["sensor"]) * current_subgoal_masks
+        current_subgoals = (
+            ideal_next_state - next_obs_batch["sensor"]
+        ) * current_subgoal_masks
         current_subgoals_steps = (1 - subgoals_done) * current_subgoals_steps
-        current_meta_recurrent_hidden_states = subgoals_done * next_meta_recurrent_hidden_states + \
-                                               (1 - subgoals_done) * current_meta_recurrent_hidden_states
+        current_meta_recurrent_hidden_states = (
+            subgoals_done * next_meta_recurrent_hidden_states
+            + (1 - subgoals_done) * current_meta_recurrent_hidden_states
+        )
         step += 1
 
     episode_reward_mean = (episode_rewards.sum() / episode_counts.sum()).item()
-    episode_success_rate_mean = (episode_success_rates.sum() / episode_counts.sum()).item()
+    episode_success_rate_mean = (
+        episode_success_rates.sum() / episode_counts.sum()
+    ).item()
     episode_length_mean = (episode_lengths.sum() / episode_counts.sum()).item()
-    episode_collision_step_mean = (episode_collision_steps.sum() / episode_counts.sum()).item()
-    episode_total_energy_cost_mean = (episode_total_energy_costs.sum() / episode_counts.sum()).item()
-    episode_avg_energy_cost_mean = (episode_avg_energy_costs.sum() / episode_counts.sum()).item()
-    episode_stage_open_door_mean = (episode_stage_open_door.sum() / episode_counts.sum()).item()
-    episode_stage_to_target_mean = (episode_stage_to_target.sum() / episode_counts.sum()).item()
+    episode_collision_step_mean = (
+        episode_collision_steps.sum() / episode_counts.sum()
+    ).item()
+    episode_total_energy_cost_mean = (
+        episode_total_energy_costs.sum() / episode_counts.sum()
+    ).item()
+    episode_avg_energy_cost_mean = (
+        episode_avg_energy_costs.sum() / episode_counts.sum()
+    ).item()
+    episode_stage_open_door_mean = (
+        episode_stage_open_door.sum() / episode_counts.sum()
+    ).item()
+    episode_stage_to_target_mean = (
+        episode_stage_to_target.sum() / episode_counts.sum()
+    ).item()
 
     subgoal_reward_mean = (subgoal_rewards.sum() / subgoal_counts.sum()).item()
-    subgoal_success_rate_mean = (subgoal_success_rates.sum() / subgoal_counts.sum()).item()
+    subgoal_success_rate_mean = (
+        subgoal_success_rates.sum() / subgoal_counts.sum()
+    ).item()
     subgoal_length_mean = (subgoal_lengths.sum() / subgoal_counts.sum()).item()
 
     if eval_only:
-        print("EVAL: num_eval_episodes: {}\treward: {:.3f}\t"
-              "success_rate: {:.3f}\tepisode_length: {:.3f}\tcollision_step: {:.3f}\t"
-              "total_energy_cost: {:.3f}\tavg_energy_cost: {:.3f}\t"
-              "stage_open_door: {:.3f}\tstage_to_target: {:.3f}".format(
-            args.num_eval_episodes, episode_reward_mean, episode_success_rate_mean, episode_length_mean,
-            episode_collision_step_mean, episode_total_energy_cost_mean, episode_avg_energy_cost_mean,
-            episode_stage_open_door_mean, episode_stage_to_target_mean,
-        ))
-        print("EVAL: num_eval_episodes: {}\tsubgoal_reward: {:.3f}\t"
-              "subgoal_success_rate: {:.3f}\tsubgoal_length: {:.3f}".format(
-            args.num_eval_episodes, subgoal_reward_mean, subgoal_success_rate_mean, subgoal_length_mean))
+        print(
+            "EVAL: num_eval_episodes: {}\treward: {:.3f}\t"
+            "success_rate: {:.3f}\tepisode_length: {:.3f}\tcollision_step: {:.3f}\t"
+            "total_energy_cost: {:.3f}\tavg_energy_cost: {:.3f}\t"
+            "stage_open_door: {:.3f}\tstage_to_target: {:.3f}".format(
+                args.num_eval_episodes,
+                episode_reward_mean,
+                episode_success_rate_mean,
+                episode_length_mean,
+                episode_collision_step_mean,
+                episode_total_energy_cost_mean,
+                episode_avg_energy_cost_mean,
+                episode_stage_open_door_mean,
+                episode_stage_to_target_mean,
+            )
+        )
+        print(
+            "EVAL: num_eval_episodes: {}\tsubgoal_reward: {:.3f}\t"
+            "subgoal_success_rate: {:.3f}\tsubgoal_length: {:.3f}".format(
+                args.num_eval_episodes,
+                subgoal_reward_mean,
+                subgoal_success_rate_mean,
+                subgoal_length_mean,
+            )
+        )
     else:
-        logger.info("EVAL: num_eval_episodes: {}\tupdate: {}\t"
-                    "reward: {:.3f}\tsuccess_rate: {:.3f}\tepisode_length: {:.3f}\tcollision_step: {:.3f}".format(
-            args.num_eval_episodes, update, episode_reward_mean, episode_success_rate_mean, episode_length_mean,
-            episode_collision_step_mean))
-        logger.info("EVAL: num_eval_episodes: {}\tupdate: {}\t"
-                    "subgoal_reward: {:.3f}\tsubgoal_success_rate: {:.3f}\tsubgoal_length: {:.3f}".format(
-            args.num_eval_episodes, update, subgoal_reward_mean, subgoal_success_rate_mean, subgoal_length_mean))
-        writer.add_scalar("eval/updates/reward", episode_reward_mean, global_step=update)
-        writer.add_scalar("eval/updates/success_rate", episode_success_rate_mean, global_step=update)
-        writer.add_scalar("eval/updates/episode_length", episode_length_mean, global_step=update)
-        writer.add_scalar("eval/updates/collision_step", episode_collision_step_mean, global_step=update)
-        writer.add_scalar("eval/updates/total_energy_cost", episode_total_energy_cost_mean, global_step=update)
-        writer.add_scalar("eval/updates/avg_energy_cost", episode_avg_energy_cost_mean, global_step=update)
-        writer.add_scalar("eval/updates/stage_open_door", episode_stage_open_door_mean, global_step=update)
-        writer.add_scalar("eval/updates/stage_to_target", episode_stage_to_target_mean, global_step=update)
+        logger.info(
+            "EVAL: num_eval_episodes: {}\tupdate: {}\t"
+            "reward: {:.3f}\tsuccess_rate: {:.3f}\tepisode_length: {:.3f}\tcollision_step: {:.3f}".format(
+                args.num_eval_episodes,
+                update,
+                episode_reward_mean,
+                episode_success_rate_mean,
+                episode_length_mean,
+                episode_collision_step_mean,
+            )
+        )
+        logger.info(
+            "EVAL: num_eval_episodes: {}\tupdate: {}\t"
+            "subgoal_reward: {:.3f}\tsubgoal_success_rate: {:.3f}\tsubgoal_length: {:.3f}".format(
+                args.num_eval_episodes,
+                update,
+                subgoal_reward_mean,
+                subgoal_success_rate_mean,
+                subgoal_length_mean,
+            )
+        )
+        writer.add_scalar(
+            "eval/updates/reward", episode_reward_mean, global_step=update
+        )
+        writer.add_scalar(
+            "eval/updates/success_rate", episode_success_rate_mean, global_step=update
+        )
+        writer.add_scalar(
+            "eval/updates/episode_length", episode_length_mean, global_step=update
+        )
+        writer.add_scalar(
+            "eval/updates/collision_step",
+            episode_collision_step_mean,
+            global_step=update,
+        )
+        writer.add_scalar(
+            "eval/updates/total_energy_cost",
+            episode_total_energy_cost_mean,
+            global_step=update,
+        )
+        writer.add_scalar(
+            "eval/updates/avg_energy_cost",
+            episode_avg_energy_cost_mean,
+            global_step=update,
+        )
+        writer.add_scalar(
+            "eval/updates/stage_open_door",
+            episode_stage_open_door_mean,
+            global_step=update,
+        )
+        writer.add_scalar(
+            "eval/updates/stage_to_target",
+            episode_stage_to_target_mean,
+            global_step=update,
+        )
 
-        writer.add_scalar("eval/env_steps/reward", episode_reward_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/success_rate", episode_success_rate_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/episode_length", episode_length_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/collision_step", episode_collision_step_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/total_energy_cost", episode_total_energy_cost_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/avg_energy_cost", episode_avg_energy_cost_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/stage_open_door", episode_stage_open_door_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/stage_to_target", episode_stage_to_target_mean, global_step=count_steps)
+        writer.add_scalar(
+            "eval/env_steps/reward", episode_reward_mean, global_step=count_steps
+        )
+        writer.add_scalar(
+            "eval/env_steps/success_rate",
+            episode_success_rate_mean,
+            global_step=count_steps,
+        )
+        writer.add_scalar(
+            "eval/env_steps/episode_length",
+            episode_length_mean,
+            global_step=count_steps,
+        )
+        writer.add_scalar(
+            "eval/env_steps/collision_step",
+            episode_collision_step_mean,
+            global_step=count_steps,
+        )
+        writer.add_scalar(
+            "eval/env_steps/total_energy_cost",
+            episode_total_energy_cost_mean,
+            global_step=count_steps,
+        )
+        writer.add_scalar(
+            "eval/env_steps/avg_energy_cost",
+            episode_avg_energy_cost_mean,
+            global_step=count_steps,
+        )
+        writer.add_scalar(
+            "eval/env_steps/stage_open_door",
+            episode_stage_open_door_mean,
+            global_step=count_steps,
+        )
+        writer.add_scalar(
+            "eval/env_steps/stage_to_target",
+            episode_stage_to_target_mean,
+            global_step=count_steps,
+        )
 
-        writer.add_scalar("eval/updates/subgoal_reward", subgoal_reward_mean, global_step=update)
-        writer.add_scalar("eval/updates/subgoal_success_rate", subgoal_success_rate_mean, global_step=update)
-        writer.add_scalar("eval/updates/subgoal_length", subgoal_length_mean, global_step=update)
-        writer.add_scalar("eval/env_steps/subgoal_reward", subgoal_reward_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/subgoal_success_rate", subgoal_success_rate_mean, global_step=count_steps)
-        writer.add_scalar("eval/env_steps/subgoal_length", subgoal_length_mean, global_step=count_steps)
+        writer.add_scalar(
+            "eval/updates/subgoal_reward", subgoal_reward_mean, global_step=update
+        )
+        writer.add_scalar(
+            "eval/updates/subgoal_success_rate",
+            subgoal_success_rate_mean,
+            global_step=update,
+        )
+        writer.add_scalar(
+            "eval/updates/subgoal_length", subgoal_length_mean, global_step=update
+        )
+        writer.add_scalar(
+            "eval/env_steps/subgoal_reward",
+            subgoal_reward_mean,
+            global_step=count_steps,
+        )
+        writer.add_scalar(
+            "eval/env_steps/subgoal_success_rate",
+            subgoal_success_rate_mean,
+            global_step=count_steps,
+        )
+        writer.add_scalar(
+            "eval/env_steps/subgoal_length",
+            subgoal_length_mean,
+            global_step=count_steps,
+        )
 
 
 def wrap_to_one(theta):
     return theta - 2.0 * torch.floor((theta + 1.0) / 2.0)
 
 
-def plot_action_mask(plot_env,
-                     meta_actor_critic,
-                     hidden_size,
-                     device
-                     ):
+def plot_action_mask(plot_env, meta_actor_critic, hidden_size, device):
     meta_recurrent_hidden_states = torch.zeros(1, hidden_size, device=device)
     masks = torch.zeros(1, 1, device=device)
     base_heat_map = np.zeros((plot_env.height, plot_env.width))
@@ -358,14 +539,18 @@ def plot_action_mask(plot_env,
                     meta_recurrent_hidden_states,
                     masks,
                 )
-            base_heat_map[row, col] = action_mask_probs[0][0].item() + action_mask_probs[0][2].item()
-            arm_heat_map[row, col] = action_mask_probs[0][1].item() + action_mask_probs[0][2].item()
+            base_heat_map[row, col] = (
+                action_mask_probs[0][0].item() + action_mask_probs[0][2].item()
+            )
+            arm_heat_map[row, col] = (
+                action_mask_probs[0][1].item() + action_mask_probs[0][2].item()
+            )
             print(row, col, action_mask_probs)
     print(arm_heat_map)
     plt.figure(0)
-    plt.imshow(base_heat_map, cmap='hot', interpolation='nearest')
+    plt.imshow(base_heat_map, cmap="hot", interpolation="nearest")
     plt.figure(1)
-    plt.imshow(arm_heat_map, cmap='hot', interpolation='nearest')
+    plt.imshow(arm_heat_map, cmap="hot", interpolation="nearest")
     plt.show()
     assert False
 
@@ -378,8 +563,14 @@ def main():
     add_hrl_args(parser)
     args = parser.parse_args()
 
-    ckpt_folder, ckpt_path, start_epoch, start_env_step, summary_folder, log_file = \
-        set_up_experiment_folder(args.experiment_folder, args.checkpoint_index)
+    (
+        ckpt_folder,
+        ckpt_path,
+        start_epoch,
+        start_env_step,
+        summary_folder,
+        log_file,
+    ) = set_up_experiment_folder(args.experiment_folder, args.checkpoint_index)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -394,8 +585,12 @@ def main():
     for p in sorted(list(vars(args))):
         logger.info("{}: {}".format(p, getattr(args, p)))
 
-    config_file = os.path.join(os.path.dirname(gibson2.__file__), "../examples/configs", args.config_file)
-    assert os.path.isfile(config_file), "config file does not exist: {}".format(config_file)
+    config_file = os.path.join(
+        os.path.dirname(gibson2.__file__), "../examples/configs", args.config_file
+    )
+    assert os.path.isfile(config_file), "config file does not exist: {}".format(
+        config_file
+    )
 
     env_config = parse_config(config_file)
     for (k, v) in env_config.items():
@@ -404,41 +599,60 @@ def main():
     def load_env(env_mode, device_idx):
         if args.env_type == "gibson":
             if args.random_position:
-                return NavigateRandomEnv(config_file=config_file,
-                                         mode=env_mode,
-                                         action_timestep=args.action_timestep,
-                                         physics_timestep=args.physics_timestep,
-                                         random_height=args.random_height,
-                                         automatic_reset=True,
-                                         device_idx=device_idx)
+                return NavigateRandomEnv(
+                    config_file=config_file,
+                    mode=env_mode,
+                    action_timestep=args.action_timestep,
+                    physics_timestep=args.physics_timestep,
+                    random_height=args.random_height,
+                    automatic_reset=True,
+                    device_idx=device_idx,
+                )
             else:
-                return NavigateEnv(config_file=config_file,
-                                   mode=env_mode,
-                                   action_timestep=args.action_timestep,
-                                   physics_timestep=args.physics_timestep,
-                                   automatic_reset=True,
-                                   device_idx=device_idx)
+                return NavigateEnv(
+                    config_file=config_file,
+                    mode=env_mode,
+                    action_timestep=args.action_timestep,
+                    physics_timestep=args.physics_timestep,
+                    automatic_reset=True,
+                    device_idx=device_idx,
+                )
         elif args.env_type == "interactive_gibson":
-            return InteractiveNavigateEnv(config_file=config_file,
-                                          mode=env_mode,
-                                          action_timestep=args.action_timestep,
-                                          physics_timestep=args.physics_timestep,
-                                          random_position=args.random_position,
-                                          automatic_reset=True,
-                                          device_idx=device_idx,
-                                          arena=args.arena)
+            return InteractiveNavigateEnv(
+                config_file=config_file,
+                mode=env_mode,
+                action_timestep=args.action_timestep,
+                physics_timestep=args.physics_timestep,
+                random_position=args.random_position,
+                automatic_reset=True,
+                device_idx=device_idx,
+                arena=args.arena,
+            )
 
     sim_gpu_id = [int(gpu_id) for gpu_id in args.sim_gpu_id.split(",")]
-    env_id_to_which_gpu = np.linspace(0,
-                                      len(sim_gpu_id),
-                                      num=args.num_train_processes + args.num_eval_processes,
-                                      dtype=np.int,
-                                      endpoint=False)
-    train_envs = [lambda device_idx=sim_gpu_id[env_id_to_which_gpu[env_id]]: load_env("headless", device_idx)
-                  for env_id in range(args.num_train_processes)]
+    env_id_to_which_gpu = np.linspace(
+        0,
+        len(sim_gpu_id),
+        num=args.num_train_processes + args.num_eval_processes,
+        dtype=np.int,
+        endpoint=False,
+    )
+    train_envs = [
+        lambda device_idx=sim_gpu_id[env_id_to_which_gpu[env_id]]: load_env(
+            "headless", device_idx
+        )
+        for env_id in range(args.num_train_processes)
+    ]
     train_envs = ParallelNavEnvironment(train_envs, blocking=False)
-    eval_envs = [lambda device_idx=sim_gpu_id[env_id_to_which_gpu[env_id]]: load_env("headless", device_idx)
-                 for env_id in range(args.num_train_processes, args.num_train_processes + args.num_eval_processes - 1)]
+    eval_envs = [
+        lambda device_idx=sim_gpu_id[env_id_to_which_gpu[env_id]]: load_env(
+            "headless", device_idx
+        )
+        for env_id in range(
+            args.num_train_processes,
+            args.num_train_processes + args.num_eval_processes - 1,
+        )
+    ]
     eval_envs += [lambda: load_env(args.env_mode, sim_gpu_id[env_id_to_which_gpu[-1]])]
     eval_envs = ParallelNavEnvironment(eval_envs, blocking=False)
 
@@ -464,7 +678,9 @@ def main():
 
     meta_observation_space = train_envs.observation_space
     sensor_space = train_envs.observation_space.spaces["sensor"]
-    subgoal_space = gym.spaces.Box(low=-2.0, high=2.0, shape=sensor_space.shape, dtype=np.float32)
+    subgoal_space = gym.spaces.Box(
+        low=-2.0, high=2.0, shape=sensor_space.shape, dtype=np.float32
+    )
 
     subgoal_mask_choices = torch.zeros(2, sensor_space.shape[0], device=device)
     subgoal_mask_choices[0, 0:2] = 1.0
@@ -477,14 +693,16 @@ def main():
 
     rollout_observation_space = train_envs.observation_space.spaces.copy()
     rollout_observation_space["subgoal"] = subgoal_space
-    rollout_observation_space["subgoal_mask"] = gym.spaces.Box(low=0, high=1,
-                                                               shape=subgoal_space.shape, dtype=np.float32)
-    rollout_observation_space["action_mask"] = gym.spaces.Box(low=0, high=1,
-                                                              shape=(action_dim,), dtype=np.float32)
+    rollout_observation_space["subgoal_mask"] = gym.spaces.Box(
+        low=0, high=1, shape=subgoal_space.shape, dtype=np.float32
+    )
+    rollout_observation_space["action_mask"] = gym.spaces.Box(
+        low=0, high=1, shape=(action_dim,), dtype=np.float32
+    )
     rollout_observation_space = gym.spaces.Dict(rollout_observation_space)
     observation_space = rollout_observation_space
 
-    sensor_normalizer = np.array(env_config['observation_normalizer']['sensor'])
+    sensor_normalizer = np.array(env_config["observation_normalizer"]["sensor"])
     sensor_magnitude = (sensor_normalizer[1] - sensor_normalizer[0]) / 2.0
     min_stddev = np.array(args.subgoal_min_std_dev) / sensor_magnitude
     initial_stddev = np.array(args.subgoal_init_std_dev) / sensor_magnitude
@@ -514,7 +732,7 @@ def main():
         eps=args.eps,
         max_grad_norm=args.max_grad_norm,
         is_meta_agent=True,
-        normalize_advantage=args.meta_agent_normalize_advantage
+        normalize_advantage=args.meta_agent_normalize_advantage,
     )
 
     actor_critic = Policy(
@@ -554,7 +772,10 @@ def main():
         agent.load_state_dict(ckpt["state_dict"])
         logger.info("loaded checkpoint: {}".format(ckpt_path))
 
-        ckpt_path = os.path.join(os.path.dirname(ckpt_path), os.path.basename(ckpt_path).replace("ckpt", "meta_ckpt"))
+        ckpt_path = os.path.join(
+            os.path.dirname(ckpt_path),
+            os.path.basename(ckpt_path).replace("ckpt", "meta_ckpt"),
+        )
         ckpt = torch.load(ckpt_path, map_location=device)
         meta_agent.load_state_dict(ckpt["state_dict"])
         logger.info("loaded checkpoint: {}".format(ckpt_path))
@@ -578,18 +799,20 @@ def main():
     #                  )
 
     if args.eval_only:
-        evaluate(args,
-                 eval_envs,
-                 meta_actor_critic,
-                 actor_critic,
-                 action_mask_choices,
-                 subgoal_mask_choices,
-                 subgoal_tolerance,
-                 device,
-                 writer,
-                 update=0,
-                 count_steps=0,
-                 eval_only=True)
+        evaluate(
+            args,
+            eval_envs,
+            meta_actor_critic,
+            actor_critic,
+            action_mask_choices,
+            subgoal_mask_choices,
+            subgoal_tolerance,
+            device,
+            writer,
+            update=0,
+            count_steps=0,
+            eval_only=True,
+        )
         return
 
     observations = train_envs.reset()
@@ -607,7 +830,6 @@ def main():
     for sensor in meta_rollouts.observations:
         meta_rollouts.observations[sensor][0].copy_(batch[sensor])
     meta_rollouts.to(device)
-
 
     if args.use_action_hindsight:
         meta_rollouts_action_hindsight = AsyncRolloutStorage(
@@ -671,14 +893,20 @@ def main():
     current_subgoal_log_probs = torch.zeros(train_envs._num_envs, 1, device=device)
     current_meta_values = torch.zeros(train_envs._num_envs, 1, device=device)
     current_subgoals_steps = torch.zeros(train_envs._num_envs, 1, device=device)
-    current_subgoals_cumulative_rewards = torch.zeros(train_envs._num_envs, 1, device=device)
+    current_subgoals_cumulative_rewards = torch.zeros(
+        train_envs._num_envs, 1, device=device
+    )
     original_subgoals = torch.zeros(batch["sensor"].shape, device=device)
 
     current_subgoal_masks = torch.zeros(batch["sensor"].shape, device=device)
     current_action_masks = torch.zeros(train_envs._num_envs, action_dim, device=device)
-    current_action_mask_indices = torch.zeros(train_envs._num_envs, 1, dtype=torch.long, device=device)
+    current_action_mask_indices = torch.zeros(
+        train_envs._num_envs, 1, dtype=torch.long, device=device
+    )
     current_action_mask_log_probs = torch.zeros(train_envs._num_envs, 1, device=device)
-    next_meta_recurrent_hidden_states = torch.zeros(train_envs._num_envs, args.hidden_size, device=device)
+    next_meta_recurrent_hidden_states = torch.zeros(
+        train_envs._num_envs, args.hidden_size, device=device
+    )
 
     t_start = time()
     env_time = 0
@@ -686,18 +914,22 @@ def main():
     count_steps = start_env_step
 
     for update in range(start_epoch, args.num_updates):
-        update_lr(agent.optimizer,
-                  args.lr,
-                  update,
-                  args.num_updates,
-                  args.use_linear_lr_decay,
-                  0)
-        update_lr(meta_agent.optimizer,
-                  args.meta_lr,
-                  update,
-                  args.num_updates,
-                  args.use_linear_lr_decay,
-                  args.freeze_lr_n_updates)
+        update_lr(
+            agent.optimizer,
+            args.lr,
+            update,
+            args.num_updates,
+            args.use_linear_lr_decay,
+            0,
+        )
+        update_lr(
+            meta_agent.optimizer,
+            args.meta_lr,
+            update,
+            args.num_updates,
+            args.use_linear_lr_decay,
+            args.freeze_lr_n_updates,
+        )
 
         agent.clip_param = args.clip_param * (1.0 - update / args.num_updates)
 
@@ -709,8 +941,8 @@ def main():
                     k: v[step] for k, v in rollouts.observations.items()
                 }
                 meta_step_observation = {
-                    k: v[meta_rollouts.valid_steps, meta_rollouts.env_indices] for k, v in
-                    meta_rollouts.observations.items()
+                    k: v[meta_rollouts.valid_steps, meta_rollouts.env_indices]
+                    for k, v in meta_rollouts.observations.items()
                 }
                 # print('step_observation', step_observation)
                 # print('meta_step_observation', meta_step_observation)
@@ -731,36 +963,62 @@ def main():
                     meta_recurrent_hidden_states,
                 ) = meta_actor_critic.act(
                     meta_step_observation,
-                    meta_rollouts.recurrent_hidden_states[meta_rollouts.valid_steps, meta_rollouts.env_indices],
-                    meta_rollouts.masks[meta_rollouts.valid_steps, meta_rollouts.env_indices],
+                    meta_rollouts.recurrent_hidden_states[
+                        meta_rollouts.valid_steps, meta_rollouts.env_indices
+                    ],
+                    meta_rollouts.masks[
+                        meta_rollouts.valid_steps, meta_rollouts.env_indices
+                    ],
                 )
 
                 if args.use_action_masks:
-                    action_masks = action_mask_choices.index_select(0, action_mask_indices.squeeze(1))
-                    subgoal_masks = subgoal_mask_choices.index_select(0, action_mask_indices.squeeze(1))
+                    action_masks = action_mask_choices.index_select(
+                        0, action_mask_indices.squeeze(1)
+                    )
+                    subgoal_masks = subgoal_mask_choices.index_select(
+                        0, action_mask_indices.squeeze(1)
+                    )
                 else:
                     action_masks = torch.ones_like(current_action_masks)
                     subgoal_masks = torch.ones_like(current_subgoal_masks)
 
                 should_use_new_subgoals = (current_subgoals_steps == 0.0).float()
-                current_meta_values = should_use_new_subgoals * meta_values + \
-                                      (1 - should_use_new_subgoals) * current_meta_values
-                current_subgoals = should_use_new_subgoals * subgoals + \
-                                   (1 - should_use_new_subgoals) * current_subgoals
-                current_subgoal_log_probs = should_use_new_subgoals * subgoal_log_probs + \
-                                            (1 - should_use_new_subgoals) * current_subgoal_log_probs
-                original_subgoals = should_use_new_subgoals * subgoals + \
-                                    (1 - should_use_new_subgoals) * original_subgoals
-                current_subgoal_masks = should_use_new_subgoals * subgoal_masks.float() + \
-                                        (1 - should_use_new_subgoals) * current_subgoal_masks
-                current_action_masks = should_use_new_subgoals * action_masks + \
-                                       (1 - should_use_new_subgoals) * current_action_masks
-                current_action_mask_indices = should_use_new_subgoals.long() * action_mask_indices + \
-                                              (1 - should_use_new_subgoals.long()) * current_action_mask_indices
-                current_action_mask_log_probs = should_use_new_subgoals * action_mask_log_probs + \
-                                                (1 - should_use_new_subgoals) * current_action_mask_log_probs
-                next_meta_recurrent_hidden_states = should_use_new_subgoals * meta_recurrent_hidden_states + \
-                                                    (1 - should_use_new_subgoals) * next_meta_recurrent_hidden_states
+                current_meta_values = (
+                    should_use_new_subgoals * meta_values
+                    + (1 - should_use_new_subgoals) * current_meta_values
+                )
+                current_subgoals = (
+                    should_use_new_subgoals * subgoals
+                    + (1 - should_use_new_subgoals) * current_subgoals
+                )
+                current_subgoal_log_probs = (
+                    should_use_new_subgoals * subgoal_log_probs
+                    + (1 - should_use_new_subgoals) * current_subgoal_log_probs
+                )
+                original_subgoals = (
+                    should_use_new_subgoals * subgoals
+                    + (1 - should_use_new_subgoals) * original_subgoals
+                )
+                current_subgoal_masks = (
+                    should_use_new_subgoals * subgoal_masks.float()
+                    + (1 - should_use_new_subgoals) * current_subgoal_masks
+                )
+                current_action_masks = (
+                    should_use_new_subgoals * action_masks
+                    + (1 - should_use_new_subgoals) * current_action_masks
+                )
+                current_action_mask_indices = (
+                    should_use_new_subgoals.long() * action_mask_indices
+                    + (1 - should_use_new_subgoals.long()) * current_action_mask_indices
+                )
+                current_action_mask_log_probs = (
+                    should_use_new_subgoals * action_mask_log_probs
+                    + (1 - should_use_new_subgoals) * current_action_mask_log_probs
+                )
+                next_meta_recurrent_hidden_states = (
+                    should_use_new_subgoals * meta_recurrent_hidden_states
+                    + (1 - should_use_new_subgoals) * next_meta_recurrent_hidden_states
+                )
 
                 current_subgoals *= current_subgoal_masks
 
@@ -769,7 +1027,9 @@ def main():
                 roll = step_observation["auxiliary_sensor"][:, 9] * np.pi
                 pitch = step_observation["auxiliary_sensor"][:, 10] * np.pi
                 yaw = step_observation["auxiliary_sensor"][:, 49] * np.pi
-                current_subgoals_rotated = rotate_torch_vector(current_subgoals, roll, pitch, yaw)
+                current_subgoals_rotated = rotate_torch_vector(
+                    current_subgoals, roll, pitch, yaw
+                )
                 current_subgoals_observation = current_subgoals_rotated
 
                 # mask observation and add current subgoal
@@ -816,8 +1076,10 @@ def main():
             observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
 
             # because of auto reset, we have to get the next observation from info if this episode is done
-            next_obs = [info["last_observation"] if done else obs for obs, done, info in
-                        zip(observations, dones, infos)]
+            next_obs = [
+                info["last_observation"] if done else obs
+                for obs, done, info in zip(observations, dones, infos)
+            ]
 
             env_time += time() - t_step_env
 
@@ -830,63 +1092,86 @@ def main():
             for sensor in next_obs_batch:
                 next_obs_batch[sensor] = next_obs_batch[sensor].to(device)
 
-            rewards = torch.tensor(rewards,
-                                   dtype=torch.float,
-                                   device=device)
+            rewards = torch.tensor(rewards, dtype=torch.float, device=device)
             rewards = rewards.unsqueeze(1)
             masks = torch.tensor(
                 [[0.0] if done else [1.0] for done in dones],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
             success_masks = torch.tensor(
-                [[float(info["success"])] if done and "success" in info else [0.0]
-                 for done, info in zip(dones, infos)],
+                [
+                    [float(info["success"])] if done and "success" in info else [0.0]
+                    for done, info in zip(dones, infos)
+                ],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
             lengths = torch.tensor(
-                [[float(info["episode_length"])] if done and "episode_length" in info else [0.0]
-                 for done, info in zip(dones, infos)],
+                [
+                    [float(info["episode_length"])]
+                    if done and "episode_length" in info
+                    else [0.0]
+                    for done, info in zip(dones, infos)
+                ],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
             collision_steps = torch.tensor(
-                [[float(info["collision_step"])] if done and "collision_step" in info else [0.0]
-                 for done, info in zip(dones, infos)],
+                [
+                    [float(info["collision_step"])]
+                    if done and "collision_step" in info
+                    else [0.0]
+                    for done, info in zip(dones, infos)
+                ],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
             total_energy_cost = torch.tensor(
-                [[float(info["energy_cost"])] if done and "energy_cost" in info else [0.0]
-                 for done, info in zip(dones, infos)],
+                [
+                    [float(info["energy_cost"])]
+                    if done and "energy_cost" in info
+                    else [0.0]
+                    for done, info in zip(dones, infos)
+                ],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
             avg_energy_cost = torch.tensor(
-                [[float(info["energy_cost"]) / float(info["episode_length"])]
-                 if done and "energy_cost" in info and "episode_length" in info
-                 else [0.0]
-                 for done, info in zip(dones, infos)],
+                [
+                    [float(info["energy_cost"]) / float(info["episode_length"])]
+                    if done and "energy_cost" in info and "episode_length" in info
+                    else [0.0]
+                    for done, info in zip(dones, infos)
+                ],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
             stage_open_door = torch.tensor(
-                [[float(info["stage"] >= 1)] if done and "stage" in info else [0.0]
-                 for done, info in zip(dones, infos)],
+                [
+                    [float(info["stage"] >= 1)] if done and "stage" in info else [0.0]
+                    for done, info in zip(dones, infos)
+                ],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
             stage_to_target = torch.tensor(
-                [[float(info["stage"] >= 2)] if done and "stage" in info else [0.0]
-                 for done, info in zip(dones, infos)],
+                [
+                    [float(info["stage"] >= 2)] if done and "stage" in info else [0.0]
+                    for done, info in zip(dones, infos)
+                ],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
             collision_rewards = torch.tensor(
-                [[float(info["collision_reward"])] if "collision_reward" in info else [0.0] for info in infos],
+                [
+                    [float(info["collision_reward"])]
+                    if "collision_reward" in info
+                    else [0.0]
+                    for info in infos
+                ],
                 dtype=torch.float,
-                device=device
+                device=device,
             )
 
             current_episode_reward += rewards
@@ -904,21 +1189,31 @@ def main():
             current_subgoals_steps += 1
             current_subgoals_cumulative_rewards += rewards
 
-            subgoals_diff = (ideal_next_state - next_obs_batch["sensor"]) * current_subgoal_masks
+            subgoals_diff = (
+                ideal_next_state - next_obs_batch["sensor"]
+            ) * current_subgoal_masks
             subgoals_distance = torch.abs(subgoals_diff)
 
-            subgoals_achieved = torch.all(subgoals_distance < subgoal_tolerance, dim=1, keepdim=True)
+            subgoals_achieved = torch.all(
+                subgoals_distance < subgoal_tolerance, dim=1, keepdim=True
+            )
             subgoals_done = (
-                    subgoals_achieved  # subgoals achieved
-                    | (current_subgoals_steps == args.time_scale)  # subgoals time up
-                    | (1.0 - masks).byte()  # episode is done
+                subgoals_achieved  # subgoals achieved
+                | (current_subgoals_steps == args.time_scale)  # subgoals time up
+                | (1.0 - masks).byte()  # episode is done
             )
             subgoals_done = subgoals_done.float()
             subgoals_achieved = subgoals_achieved.float()
 
             penalty_prob_th = 0.5
-            current_subgoals_penalty = args.subgoal_failed_penalty * subgoals_done * (1.0 - subgoals_achieved) * \
-                                       (torch.rand(train_envs._num_envs, 1, device=device) < penalty_prob_th).float()
+            current_subgoals_penalty = (
+                args.subgoal_failed_penalty
+                * subgoals_done
+                * (1.0 - subgoals_achieved)
+                * (
+                    torch.rand(train_envs._num_envs, 1, device=device) < penalty_prob_th
+                ).float()
+            )
             meta_rollouts.insert(
                 subgoals_done,
                 batch,
@@ -933,18 +1228,35 @@ def main():
             )
 
             if args.use_action_hindsight:
-                hindsight_subgoals = next_obs_batch["sensor"] - meta_step_observation['sensor']
-                _, hindsight_subgoal_log_probs, _, _, _, _ = meta_actor_critic.evaluate_actions(
+                hindsight_subgoals = (
+                    next_obs_batch["sensor"] - meta_step_observation["sensor"]
+                )
+                (
+                    _,
+                    hindsight_subgoal_log_probs,
+                    _,
+                    _,
+                    _,
+                    _,
+                ) = meta_actor_critic.evaluate_actions(
                     meta_step_observation,
-                    meta_rollouts.recurrent_hidden_states[meta_rollouts.valid_steps, meta_rollouts.env_indices],
-                    meta_rollouts.masks[meta_rollouts.valid_steps, meta_rollouts.env_indices],
+                    meta_rollouts.recurrent_hidden_states[
+                        meta_rollouts.valid_steps, meta_rollouts.env_indices
+                    ],
+                    meta_rollouts.masks[
+                        meta_rollouts.valid_steps, meta_rollouts.env_indices
+                    ],
                     hindsight_subgoals,
                     current_action_mask_indices,
                 )
-                hindsight_subgoals = subgoals_achieved * original_subgoals + \
-                                     (1 - subgoals_achieved) * hindsight_subgoals
-                hindsight_subgoal_log_probs = subgoals_achieved * current_subgoal_log_probs + \
-                                              (1 - subgoals_achieved) * hindsight_subgoal_log_probs
+                hindsight_subgoals = (
+                    subgoals_achieved * original_subgoals
+                    + (1 - subgoals_achieved) * hindsight_subgoals
+                )
+                hindsight_subgoal_log_probs = (
+                    subgoals_achieved * current_subgoal_log_probs
+                    + (1 - subgoals_achieved) * hindsight_subgoal_log_probs
+                )
                 meta_rollouts_action_hindsight.insert(
                     subgoals_done,
                     batch,
@@ -959,14 +1271,22 @@ def main():
                 )
 
             prev_potential = ideal_next_state - step_observation["sensor"]
-            prev_potential = torch.norm(prev_potential * current_subgoal_masks, dim=1, keepdim=True)
+            prev_potential = torch.norm(
+                prev_potential * current_subgoal_masks, dim=1, keepdim=True
+            )
             current_potential = ideal_next_state - next_obs_batch["sensor"]
-            current_potential = torch.norm(current_potential * current_subgoal_masks, dim=1, keepdim=True)
+            current_potential = torch.norm(
+                current_potential * current_subgoal_masks, dim=1, keepdim=True
+            )
 
             intrinsic_reward = 0.0
-            intrinsic_reward += (prev_potential - current_potential) * args.intrinsic_reward_scaling
+            intrinsic_reward += (
+                prev_potential - current_potential
+            ) * args.intrinsic_reward_scaling
             intrinsic_reward += subgoals_achieved.float() * args.subgoal_achieved_reward
-            intrinsic_reward += collision_rewards * args.extrinsic_collision_reward_weight
+            intrinsic_reward += (
+                collision_rewards * args.extrinsic_collision_reward_weight
+            )
             intrinsic_reward += rewards * args.extrinsic_reward_weight
 
             # print('-' * 50)
@@ -984,7 +1304,7 @@ def main():
             subgoal_success_rates += subgoals_achieved
             subgoal_lengths += subgoals_done * current_subgoals_steps
             subgoal_counts += subgoals_done
-            current_subgoal_reward *= (1 - subgoals_done)
+            current_subgoal_reward *= 1 - subgoals_done
 
             # s_t+1 - batch["rgb"]: [num_processes, 256, 256, 3],
             # s_t+1 - batch["depth"]: [num_processes, 256, 256, 1]
@@ -1005,9 +1325,13 @@ def main():
                 1 - subgoals_done,
             )
 
-            current_subgoals = (ideal_next_state - next_obs_batch["sensor"]) * current_subgoal_masks
+            current_subgoals = (
+                ideal_next_state - next_obs_batch["sensor"]
+            ) * current_subgoal_masks
             current_subgoals_steps = (1 - subgoals_done) * current_subgoals_steps
-            current_subgoals_cumulative_rewards = (1 - subgoals_done) * current_subgoals_cumulative_rewards
+            current_subgoals_cumulative_rewards = (
+                1 - subgoals_done
+            ) * current_subgoals_cumulative_rewards
 
             count_steps += train_envs._num_envs
             pth_time += time() - t_update_stats
@@ -1049,8 +1373,12 @@ def main():
             }
             next_meta_value = meta_actor_critic.get_value(
                 last_meta_observation,
-                meta_rollouts.recurrent_hidden_states[meta_rollouts.valid_steps, meta_rollouts.env_indices],
-                meta_rollouts.masks[meta_rollouts.valid_steps, meta_rollouts.env_indices],
+                meta_rollouts.recurrent_hidden_states[
+                    meta_rollouts.valid_steps, meta_rollouts.env_indices
+                ],
+                meta_rollouts.masks[
+                    meta_rollouts.valid_steps, meta_rollouts.env_indices
+                ],
             ).detach()
 
             last_observation = {
@@ -1060,7 +1388,9 @@ def main():
             roll = rollouts.observations["auxiliary_sensor"][-1][:, 9] * np.pi
             pitch = rollouts.observations["auxiliary_sensor"][-1][:, 10] * np.pi
             yaw = rollouts.observations["auxiliary_sensor"][-1][:, 49] * np.pi
-            current_subgoals_rotated = rotate_torch_vector(current_subgoals, roll, pitch, yaw)
+            current_subgoals_rotated = rotate_torch_vector(
+                current_subgoals, roll, pitch, yaw
+            )
             current_subgoals_observation = current_subgoals_rotated
 
             last_observation["subgoal"] = current_subgoals_observation
@@ -1078,16 +1408,16 @@ def main():
         )
 
         # V(s_t+num_steps) - next_value: [num_processes, 1]
-        rollouts.compute_returns(
-            next_value, args.use_gae, args.gamma, args.tau
-        )
+        rollouts.compute_returns(next_value, args.use_gae, args.gamma, args.tau)
 
         if args.use_action_hindsight:
             meta_rollouts_action_hindsight.compute_returns(
                 next_meta_value, args.use_gae, args.meta_gamma, args.tau
             )
 
-        meta_value_loss, subgoal_loss, meta_dist_entropy = meta_agent.update(meta_rollouts)
+        meta_value_loss, subgoal_loss, meta_dist_entropy = meta_agent.update(
+            meta_rollouts
+        )
         # meta_value_loss, subgoal_loss, meta_dist_entropy = meta_agent.update(meta_rollouts_action_hindsight)
 
         value_loss, action_loss, dist_entropy = agent.update(rollouts, update=update)
@@ -1100,7 +1430,11 @@ def main():
         if update > 0 and update % args.log_interval == 0:
             logger.info(
                 "update: {}\tenv_steps: {}\tenv_steps_per_sec: {:.3f}\tenv-time: {:.3f}s\tpth-time: {:.3f}s".format(
-                    update, count_steps, count_steps / (time() - t_start), env_time, pth_time
+                    update,
+                    count_steps,
+                    count_steps / (time() - t_start),
+                    env_time,
+                    pth_time,
                 )
             )
             logger.info(
@@ -1111,29 +1445,63 @@ def main():
             logger.info(
                 "update: {}\tenv_steps: {}\tmeta_value_loss: {:.3f}\tsubgoal_loss: {:.3f}\t"
                 "meta_dist_entropy: {:.3f}".format(
-                    update, count_steps, meta_value_loss, subgoal_loss, meta_dist_entropy
+                    update,
+                    count_steps,
+                    meta_value_loss,
+                    subgoal_loss,
+                    meta_dist_entropy,
                 )
             )
-            writer.add_scalar("time/env_step_per_second", count_steps / (time() - t_start), global_step=update)
-            writer.add_scalar("time/env_time_per_update", env_time / update, global_step=update)
-            writer.add_scalar("time/pth_time_per_update", pth_time / update, global_step=update)
-            writer.add_scalar("time/env_steps_per_update", count_steps / update,
-                              global_step=update)
+            writer.add_scalar(
+                "time/env_step_per_second",
+                count_steps / (time() - t_start),
+                global_step=update,
+            )
+            writer.add_scalar(
+                "time/env_time_per_update", env_time / update, global_step=update
+            )
+            writer.add_scalar(
+                "time/pth_time_per_update", pth_time / update, global_step=update
+            )
+            writer.add_scalar(
+                "time/env_steps_per_update", count_steps / update, global_step=update
+            )
             writer.add_scalar("losses/value_loss", value_loss, global_step=update)
             writer.add_scalar("losses/action_loss", action_loss, global_step=update)
             writer.add_scalar("losses/dist_entropy", dist_entropy, global_step=update)
-            writer.add_scalar("losses/meta_value_loss", meta_value_loss, global_step=update)
+            writer.add_scalar(
+                "losses/meta_value_loss", meta_value_loss, global_step=update
+            )
             writer.add_scalar("losses/subgoal_loss", subgoal_loss, global_step=update)
-            writer.add_scalar("losses/meta_dist_entropy", meta_dist_entropy, global_step=update)
+            writer.add_scalar(
+                "losses/meta_dist_entropy", meta_dist_entropy, global_step=update
+            )
 
-            window_rewards = (window_episode_reward[-1] - window_episode_reward[0]).sum()
-            window_success_rates = (window_episode_success_rates[-1] - window_episode_success_rates[0]).sum()
-            window_lengths = (window_episode_lengths[-1] - window_episode_lengths[0]).sum()
-            window_collision_steps = (window_episode_collision_steps[-1] - window_episode_collision_steps[0]).sum()
-            window_total_energy_costs = (window_episode_total_energy_costs[-1] - window_episode_total_energy_costs[0]).sum()
-            window_avg_energy_costs = (window_episode_avg_energy_costs[-1] - window_episode_avg_energy_costs[0]).sum()
-            window_stage_open_doors = (window_episode_stage_open_doors[-1] - window_episode_stage_open_doors[0]).sum()
-            window_stage_to_targets = (window_episode_stage_to_targets[-1] - window_episode_stage_to_targets[0]).sum()
+            window_rewards = (
+                window_episode_reward[-1] - window_episode_reward[0]
+            ).sum()
+            window_success_rates = (
+                window_episode_success_rates[-1] - window_episode_success_rates[0]
+            ).sum()
+            window_lengths = (
+                window_episode_lengths[-1] - window_episode_lengths[0]
+            ).sum()
+            window_collision_steps = (
+                window_episode_collision_steps[-1] - window_episode_collision_steps[0]
+            ).sum()
+            window_total_energy_costs = (
+                window_episode_total_energy_costs[-1]
+                - window_episode_total_energy_costs[0]
+            ).sum()
+            window_avg_energy_costs = (
+                window_episode_avg_energy_costs[-1] - window_episode_avg_energy_costs[0]
+            ).sum()
+            window_stage_open_doors = (
+                window_episode_stage_open_doors[-1] - window_episode_stage_open_doors[0]
+            ).sum()
+            window_stage_to_targets = (
+                window_episode_stage_to_targets[-1] - window_episode_stage_to_targets[0]
+            ).sum()
 
             window_counts = (window_episode_counts[-1] - window_episode_counts[0]).sum()
             if window_counts > 0:
@@ -1141,7 +1509,9 @@ def main():
                 success_rate_mean = (window_success_rates / window_counts).item()
                 lengths_mean = (window_lengths / window_counts).item()
                 collision_steps_mean = (window_collision_steps / window_counts).item()
-                total_energy_costs_mean = (window_total_energy_costs / window_counts).item()
+                total_energy_costs_mean = (
+                    window_total_energy_costs / window_counts
+                ).item()
                 avg_energy_costs_mean = (window_avg_energy_costs / window_counts).item()
                 stage_open_doors_mean = (window_stage_open_doors / window_counts).item()
                 stage_to_targets_mean = (window_stage_to_targets / window_counts).item()
@@ -1161,29 +1531,91 @@ def main():
                         stage_to_targets_mean,
                     )
                 )
-                writer.add_scalar("train/updates/reward", reward_mean, global_step=update)
-                writer.add_scalar("train/updates/success_rate", success_rate_mean, global_step=update)
-                writer.add_scalar("train/updates/episode_length", lengths_mean, global_step=update)
-                writer.add_scalar("train/updates/collision_step", collision_steps_mean, global_step=update)
-                writer.add_scalar("train/updates/total_energy_cost", total_energy_costs_mean, global_step=update)
-                writer.add_scalar("train/updates/avg_energy_cost", avg_energy_costs_mean, global_step=update)
-                writer.add_scalar("train/updates/stage_open_door", stage_open_doors_mean, global_step=update)
-                writer.add_scalar("train/updates/stage_to_target", stage_to_targets_mean, global_step=update)
+                writer.add_scalar(
+                    "train/updates/reward", reward_mean, global_step=update
+                )
+                writer.add_scalar(
+                    "train/updates/success_rate", success_rate_mean, global_step=update
+                )
+                writer.add_scalar(
+                    "train/updates/episode_length", lengths_mean, global_step=update
+                )
+                writer.add_scalar(
+                    "train/updates/collision_step",
+                    collision_steps_mean,
+                    global_step=update,
+                )
+                writer.add_scalar(
+                    "train/updates/total_energy_cost",
+                    total_energy_costs_mean,
+                    global_step=update,
+                )
+                writer.add_scalar(
+                    "train/updates/avg_energy_cost",
+                    avg_energy_costs_mean,
+                    global_step=update,
+                )
+                writer.add_scalar(
+                    "train/updates/stage_open_door",
+                    stage_open_doors_mean,
+                    global_step=update,
+                )
+                writer.add_scalar(
+                    "train/updates/stage_to_target",
+                    stage_to_targets_mean,
+                    global_step=update,
+                )
 
-                writer.add_scalar("train/env_steps/reward", reward_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/success_rate", success_rate_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/episode_length", lengths_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/collision_step", collision_steps_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/total_energy_cost", total_energy_costs_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/avg_energy_cost", avg_energy_costs_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/stage_open_door", stage_open_doors_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/stage_to_target", stage_to_targets_mean, global_step=count_steps)
+                writer.add_scalar(
+                    "train/env_steps/reward", reward_mean, global_step=count_steps
+                )
+                writer.add_scalar(
+                    "train/env_steps/success_rate",
+                    success_rate_mean,
+                    global_step=count_steps,
+                )
+                writer.add_scalar(
+                    "train/env_steps/episode_length",
+                    lengths_mean,
+                    global_step=count_steps,
+                )
+                writer.add_scalar(
+                    "train/env_steps/collision_step",
+                    collision_steps_mean,
+                    global_step=count_steps,
+                )
+                writer.add_scalar(
+                    "train/env_steps/total_energy_cost",
+                    total_energy_costs_mean,
+                    global_step=count_steps,
+                )
+                writer.add_scalar(
+                    "train/env_steps/avg_energy_cost",
+                    avg_energy_costs_mean,
+                    global_step=count_steps,
+                )
+                writer.add_scalar(
+                    "train/env_steps/stage_open_door",
+                    stage_open_doors_mean,
+                    global_step=count_steps,
+                )
+                writer.add_scalar(
+                    "train/env_steps/stage_to_target",
+                    stage_to_targets_mean,
+                    global_step=count_steps,
+                )
             else:
                 logger.info("No episodes finish in current window")
 
-            window_rewards = (window_subgoal_reward[-1] - window_subgoal_reward[0]).sum()
-            window_success_rates = (window_subgoal_success_rates[-1] - window_subgoal_success_rates[0]).sum()
-            window_lengths = (window_subgoal_lengths[-1] - window_subgoal_lengths[0]).sum()
+            window_rewards = (
+                window_subgoal_reward[-1] - window_subgoal_reward[0]
+            ).sum()
+            window_success_rates = (
+                window_subgoal_success_rates[-1] - window_subgoal_success_rates[0]
+            ).sum()
+            window_lengths = (
+                window_subgoal_lengths[-1] - window_subgoal_lengths[0]
+            ).sum()
             window_counts = (window_subgoal_counts[-1] - window_subgoal_counts[0]).sum()
 
             if window_counts > 0:
@@ -1198,12 +1630,32 @@ def main():
                         lengths_mean,
                     )
                 )
-                writer.add_scalar("train/updates/subgoal_reward", reward_mean, global_step=update)
-                writer.add_scalar("train/updates/subgoal_success_rate", success_rate_mean, global_step=update)
-                writer.add_scalar("train/updates/subgoal_length", lengths_mean, global_step=update)
-                writer.add_scalar("train/env_steps/subgoal_reward", reward_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/subgoal_success_rate", success_rate_mean, global_step=count_steps)
-                writer.add_scalar("train/env_steps/subgoal_length", lengths_mean, global_step=count_steps)
+                writer.add_scalar(
+                    "train/updates/subgoal_reward", reward_mean, global_step=update
+                )
+                writer.add_scalar(
+                    "train/updates/subgoal_success_rate",
+                    success_rate_mean,
+                    global_step=update,
+                )
+                writer.add_scalar(
+                    "train/updates/subgoal_length", lengths_mean, global_step=update
+                )
+                writer.add_scalar(
+                    "train/env_steps/subgoal_reward",
+                    reward_mean,
+                    global_step=count_steps,
+                )
+                writer.add_scalar(
+                    "train/env_steps/subgoal_success_rate",
+                    success_rate_mean,
+                    global_step=count_steps,
+                )
+                writer.add_scalar(
+                    "train/env_steps/subgoal_length",
+                    lengths_mean,
+                    global_step=count_steps,
+                )
             else:
                 logger.info("No subgoals finish in current window")
 
