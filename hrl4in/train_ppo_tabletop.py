@@ -23,7 +23,7 @@ from hrl4in.utils.args import *
 
 import gibson2
 from gibson2.envs.igibson_env import iGibsonEnv
-from gibson2.envs.parallel_env import ParallelNavEnvironment
+from gibson2.envs.parallel_env import ParallelNavEnv
 
 # from gibson2.envs.locomotor_env import NavigateEnv, NavigateRandomEnv, InteractiveNavigateEnv
 
@@ -167,18 +167,16 @@ def evaluate(
     if eval_only:
         print(
             "EVAL: num_eval_episodes: {}\treward: {:.3f}\t"
-            "success_rate: {:.3f}\tepisode_length: {:.3f}\tcollision_step: {:.3f}\t"
-            "total_energy_cost: {:.3f}\tavg_energy_cost: {:.3f}\t"
-            "stage_open_door: {:.3f}\tstage_to_target: {:.3f}".format(
+            "success_rate: {:.3f}\tepisode_length: {:.3f}\tcollision_step: {:.3f}\t".format(
                 num_eval_episodes,
                 episode_reward_mean,
                 episode_success_rate_mean,
                 episode_length_mean,
                 episode_collision_step_mean,
-                episode_total_energy_cost_mean,
-                episode_avg_energy_cost_mean,
-                episode_stage_open_door_mean,
-                episode_stage_to_target_mean,
+                # episode_total_energy_cost_mean,
+                # episode_avg_energy_cost_mean,
+                # episode_stage_open_door_mean,
+                # episode_stage_to_target_mean,
             )
         )
     else:
@@ -323,35 +321,6 @@ def main():
             automatic_reset=True,
             device_idx=device_idx,
         )
-        # if args.env_type == "gibson":
-        #     if args.random_position:
-        #         return NavigateRandomEnv(config_file=config_file,
-        #                                  mode=env_mode,
-        #                                  action_timestep=args.action_timestep,
-        #                                  physics_timestep=args.physics_timestep,
-        #                                  random_height=args.random_height,
-        #                                  automatic_reset=True,
-        #                                  device_idx=device_idx)
-        #     else:
-        #         return NavigateEnv(config_file=config_file,
-        #                            mode=env_mode,
-        #                            action_timestep=args.action_timestep,
-        #                            physics_timestep=args.physics_timestep,
-        #                            automatic_reset=True,
-        #                            device_idx=device_idx)
-        # elif args.env_type == "interactive_gibson":
-        #     return InteractiveNavigateEnv(config_file=config_file,
-        #                                   mode=env_mode,
-        #                                   action_timestep=args.action_timestep,
-        #                                   physics_timestep=args.physics_timestep,
-        #                                   automatic_reset=True,
-        #                                   random_position=args.random_position,
-        #                                   device_idx=device_idx)
-        # elif args.env_type == "toy":
-        #     return ToyEnv(config_file=config_file,
-        #                   should_normalize_state=True,
-        #                   automatic_reset=True,
-        #                   visualize=False)
 
     sim_gpu_id = [int(gpu_id) for gpu_id in args.sim_gpu_id.split(",")]
     env_id_to_which_gpu = np.linspace(
@@ -634,7 +603,7 @@ def main():
             # window_episode_total_energy_costs.popleft()
             # window_episode_avg_energy_costs.popleft()
             # window_episode_stage_open_doors.popleft()
-            window_episode_stage_to_targets.popleft()
+            # window_episode_stage_to_targets.popleft()
             window_episode_counts.popleft()
         window_episode_reward.append(episode_rewards.clone())
         window_episode_success_rates.append(episode_success_rates.clone())
@@ -738,8 +707,7 @@ def main():
 
                 logger.info(
                     "average window size {}\treward: {:.3f}\tsuccess_rate: {:.3f}\tepisode length: {:.3f}\t"
-                    "collision_step: {:.3f}\ttotal_energy_cost: {:.3f}\tavg_energy_cost: {:.3f}\t"
-                    "stage_open_door: {:.3f}\tstage_to_target: {:.3f}".format(
+                    "collision_step: {:.3f}".format(
                         len(window_episode_reward),
                         reward_mean,
                         success_rate_mean,
@@ -804,26 +772,26 @@ def main():
                     collision_steps_mean,
                     global_step=count_steps,
                 )
-                writer.add_scalar(
-                    "train/env_steps/total_energy_cost",
-                    total_energy_costs_mean,
-                    global_step=count_steps,
-                )
-                writer.add_scalar(
-                    "train/env_steps/avg_energy_cost",
-                    avg_energy_costs_mean,
-                    global_step=count_steps,
-                )
-                writer.add_scalar(
-                    "train/env_steps/stage_open_door",
-                    stage_open_doors_mean,
-                    global_step=count_steps,
-                )
-                writer.add_scalar(
-                    "train/env_steps/stage_to_target",
-                    stage_to_targets_mean,
-                    global_step=count_steps,
-                )
+                # writer.add_scalar(
+                #     "train/env_steps/total_energy_cost",
+                #     total_energy_costs_mean,
+                #     global_step=count_steps,
+                # )
+                # writer.add_scalar(
+                #     "train/env_steps/avg_energy_cost",
+                #     avg_energy_costs_mean,
+                #     global_step=count_steps,
+                # )
+                # writer.add_scalar(
+                #     "train/env_steps/stage_open_door",
+                #     stage_open_doors_mean,
+                #     global_step=count_steps,
+                # )
+                # writer.add_scalar(
+                #     "train/env_steps/stage_to_target",
+                #     stage_to_targets_mean,
+                #     global_step=count_steps,
+                # )
             else:
                 logger.info("No episodes finish in current window")
 
@@ -854,4 +822,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
