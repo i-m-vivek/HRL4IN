@@ -52,23 +52,20 @@ def add_env_args(parser):
 def add_hrl_args(parser):
     group = parser.add_argument_group("hrl")
     group.add_argument(
-        "--meta-lr",
-        type=float,
-        default=7e-4,
-        help="meta learning rate (default: 7e-4)"
+        "--meta-lr", type=float, default=7e-4, help="meta learning rate (default: 7e-4)"
     )
     group.add_argument(
         "--freeze-lr-n-updates",
         type=int,
         default=0,
-        help="Set meta learning rate to be zero for the first n updates (default: 0)"
+        help="Set meta learning rate to be zero for the first n updates (default: 0)",
     )
     group.add_argument(
         "--time-scale",
         type=int,
         default=10,
         help="maximum number of actions that the low-level policy can take to fulfill "
-             "the subgoals set by the high-level policy"
+        "the subgoals set by the high-level policy",
     )
     group.add_argument(
         "--use-action-masks",
@@ -131,7 +128,7 @@ def add_hrl_args(parser):
         action="store_true",
         default=False,
         help="whether to action hindsight, i.e. assume perfect LL policy and overwrite original subgoals "
-             "with states actually achieved",
+        "with states actually achieved",
     )
     group.add_argument(
         "--meta-agent-normalize-advantage",
@@ -143,6 +140,12 @@ def add_hrl_args(parser):
 
 def add_common_args(parser):
     group = parser.add_argument_group("common")
+    group.add_argument(
+        "--use-checkpoint",
+        help="whether to use checkpoint or not. Default: False",
+        default=False,
+        action="store_true",
+    )
     # gpu id related
     group.add_argument(
         "--sim-gpu-id",
@@ -159,10 +162,7 @@ def add_common_args(parser):
 
     # training related
     group.add_argument(
-        "--lr",
-        type=float,
-        default=7e-4,
-        help="learning rate (default: 7e-4)"
+        "--lr", type=float, default=7e-4, help="learning rate (default: 7e-4)"
     )
     group.add_argument(
         "--eps",
@@ -222,7 +222,7 @@ def add_common_args(parser):
         "--experiment-folder",
         type=str,
         required=True,
-        help="path to the experiment folder, which will contains 1) log file 2) ckpt/ and 3) summary/"
+        help="path to the experiment folder, which will contains 1) log file 2) ckpt/ and 3) summary/",
     )
     group.add_argument(
         "--perf-window-size",
@@ -256,12 +256,7 @@ def add_common_args(parser):
     )
 
     # random mechanism related
-    group.add_argument(
-        "--seed",
-        type=int,
-        default=100,
-        help="random seed"
-    )
+    group.add_argument("--seed", type=int, default=100, help="random seed")
 
 
 def add_ppo_args(parser):
@@ -312,7 +307,7 @@ def add_ppo_args(parser):
         "--hidden-size",
         type=int,
         default=512,
-        help="size of the hidden layer for RNNs (default: 512)"
+        help="size of the hidden layer for RNNs (default: 512)",
     )
     group.add_argument(
         "--use-gae",
@@ -352,6 +347,6 @@ def add_ppo_args(parser):
         type=int,
         default=None,
         help="linear anneal log std dev of action distribution from action-init-std-dev to action-min-std-dev,"
-             "starting from update 0 to update action-std-dev-anneal-schedule."
-             "After update action-std-dev-anneal-schedule, stddev is kept at action-min-std-dev.",
+        "starting from update 0 to update action-std-dev-anneal-schedule."
+        "After update action-std-dev-anneal-schedule, stddev is kept at action-min-std-dev.",
     )
