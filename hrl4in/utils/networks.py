@@ -333,6 +333,8 @@ class Net(nn.Module):
             additional_rnn_input = []
             if self._n_non_vis_sensor > 0:
                 additional_rnn_input.append(observations["sensor"])
+            if self._n_task_obs > 0:
+                additional_rnn_input.append(observations["task_obs"])
             if self._n_auxiliary_sensor > 0:
                 additional_rnn_input.append(observations["auxiliary_sensor"])
             if self._n_scan > 0:
