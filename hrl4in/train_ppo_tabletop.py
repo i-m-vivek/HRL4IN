@@ -354,7 +354,7 @@ def main():
 
     # (output_channel, kernel_size, stride, padding)
     # if args.env_type == "gibson" or args.env_type == "interactive_gibson":
-    #     cnn_layers_params = [(32, 8, 4, 0), (64, 4, 2, 0), (64, 3, 1, 0)]
+    cnn_layers_params = [(32, 8, 4, 0), (64, 4, 2, 0), (64, 3, 1, 0)]
     # elif args.env_type == "toy":
     #     cnn_layers_params = [(32, 3, 1, 1), (32, 3, 1, 1), (32, 3, 1, 1)]
 
@@ -362,7 +362,7 @@ def main():
         observation_space=train_envs.observation_space,
         action_space=train_envs.action_space,
         hidden_size=args.hidden_size,
-        # cnn_layers_params=cnn_layers_params,
+        cnn_layers_params=cnn_layers_params,
         initial_stddev=args.action_init_std_dev,
         min_stddev=args.action_min_std_dev,
         stddev_anneal_schedule=args.action_std_dev_anneal_schedule,
