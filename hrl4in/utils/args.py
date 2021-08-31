@@ -49,7 +49,6 @@ def add_env_args(parser):
     )
     group.add_argument(
         "--use_base_only",
-        type=bool,
         action="store_true",
         default=False,
         help="To use base only.",
