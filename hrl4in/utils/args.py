@@ -47,6 +47,13 @@ def add_env_args(parser):
         default="complex_hl_ll",
         help="arena to load on pybullet",
     )
+    group.add_argument(
+        "--use_base_only",
+        type=bool,
+        action="store_true",
+        default=False,
+        help="To use base only.",
+    )
 
 
 def add_hrl_args(parser):

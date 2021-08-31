@@ -69,6 +69,7 @@ def evaluate(
                 update=0,
             )
         actions_np = actions.cpu().numpy()
+        actions_np = actions_np*action_mask
         outputs = envs.step(actions_np)
 
         observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
@@ -357,7 +358,11 @@ def main():
     cnn_layers_params = [(32, 8, 4, 0), (64, 4, 2, 0), (64, 3, 1, 0)]
     # elif args.env_type == "toy":
     #     cnn_layers_params = [(32, 3, 1, 1), (32, 3, 1, 1), (32, 3, 1, 1)]
+    action_dim = train_envs.action_space.shape[0]
+    action_mask = np.ones(action_dim)
 
+    if args["use_base_only"] and train_envs._envs[0].config["robot"] == "Tiago_Single":
+        action_mask[2:] = 0 
     actor_critic = Policy(
         observation_space=train_envs.observation_space,
         action_space=train_envs.action_space,
@@ -498,6 +503,7 @@ def main():
             #     (observation, reward, done, info),
             # ]
             # len(outputs) == num_processes
+            actions_np = actions_np*action_mask
             outputs = train_envs.step(actions_np)
             observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
             env_time += time() - t_step_env
