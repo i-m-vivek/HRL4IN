@@ -361,7 +361,7 @@ def main():
     action_dim = train_envs.action_space.shape[0]
     action_mask = np.ones(action_dim)
 
-    if args["use_base_only"] and train_envs._envs[0].config["robot"] == "Tiago_Single":
+    if args.use_base_only and (train_envs._envs[0].config["robot"] == "Tiago_Single"):
         action_mask[2:] = 0 
     actor_critic = Policy(
         observation_space=train_envs.observation_space,
