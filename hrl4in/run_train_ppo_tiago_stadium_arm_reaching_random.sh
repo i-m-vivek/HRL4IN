@@ -18,7 +18,7 @@ python -u train_ppo_tabletop.py \
    --lr $lr \
    --clip-param 0.1 \
    --value-loss-coef 0.5 \
-   --num-train-processes 3 \
+   --num-train-processes 1 \
    --num-eval-processes 1 \
    --num-steps $num_steps \
    --num-mini-batch 1 \
