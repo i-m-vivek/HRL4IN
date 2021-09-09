@@ -27,7 +27,7 @@ python -u train_ppo_tabletop.py \
    --use-linear-clip-decay \
    --entropy-coef 0.01 \
    --log-interval 1 \
-   --experiment-folder "ckpt/tiago_stadium_point_nav_random" \
+   --experiment-folder "ckpt/tiago_stadium_point_nav_random_hrl4in_ss" \
    --checkpoint-interval 10 \
    --checkpoint-index -1 \
    --config-file "tiago_stadium_point_nav_random.yaml" \
