@@ -53,6 +53,12 @@ def add_env_args(parser):
         default=False,
         help="To use base only.",
     )
+    group.add_argument(
+        "--use_arm_only",
+        action="store_true",
+        default=False, 
+        help="To use arm only"
+    )
 
 
 def add_hrl_args(parser):
