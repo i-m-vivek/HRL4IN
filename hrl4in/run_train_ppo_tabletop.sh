@@ -6,7 +6,6 @@ pos="fixed"
 lr="1e-4"
 death="30.0"
 num_steps="1024"
-name="exp"
 run="0"
 
 # log_dir="hrl_reward_"$reward_type"_pos_"$pos"_sgm_arm_world_irs_"$irs"_sgr_"$sgr"_lr_"$lr"_meta_lr_"$meta_lr"_fr_lr_"$fr_lr"_death_"$death"_init_std_"$init_std_dev_xy"_"$init_std_dev_xy"_"$init_std_dev_z"_failed_pnt_"$failed_pnt"_nsteps_"$num_steps"_ext_col_"$ext_col"_6x6_from_scr_"$name"_run_"$run
@@ -28,7 +27,7 @@ python -u train_ppo_tabletop.py \
    --use-linear-clip-decay \
    --entropy-coef 0.01 \
    --log-interval 1 \
-   --experiment-folder "ckpt/ppo_tabletop" \
+   --experiment-folder "ckpt/ppo_tiago_tabletop_hrl4in_ss" \
    --checkpoint-interval 10 \
    --checkpoint-index -1 \
    --config-file "tiago_tabletop.yaml" \
