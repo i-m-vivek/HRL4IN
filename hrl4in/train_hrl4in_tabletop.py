@@ -17,12 +17,14 @@ from hrl4in.utils.utils import *
 from hrl4in.utils.args import *
 
 import gibson2
-from gibson2.envs.parallel_env import ParallelNavEnvironment
-from gibson2.envs.locomotor_env import (
-    NavigateEnv,
-    NavigateRandomEnv,
-    InteractiveNavigateEnv,
-)
+# from gibson2.envs.parallel_env import ParallelNavEnvironment
+# from gibson2.envs.locomotor_env import (
+#     NavigateEnv,
+#     NavigateRandomEnv,
+#     InteractiveNavigateEnv,
+# )
+from gibson2.envs.igibson_env import iGibsonEnv
+from gibson2.envs.parallel_env import ParallelNavEnv
 
 from IPython import embed
 import matplotlib.pyplot as plt
