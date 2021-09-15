@@ -556,7 +556,7 @@ def main():
         start_env_step,
         summary_folder,
         log_file,
-    ) = set_up_experiment_folder(args.experiment_folder, args.checkpoint_index)
+    ) = set_up_experiment_folder(args.experiment_folder, args.checkpoint_index, args.use_checkpoint)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
