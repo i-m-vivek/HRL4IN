@@ -649,7 +649,7 @@ def main():
         )
     ]
     eval_envs += [lambda: load_env(args.env_mode, sim_gpu_id[env_id_to_which_gpu[-1]])]
-    eval_envs = ParallelNavEnvironment(eval_envs, blocking=False)
+    eval_envs = ParallelNavEnv(eval_envs, blocking=False)
 
     logger.info(train_envs.observation_space)
     logger.info(train_envs.action_space)
