@@ -283,7 +283,7 @@ def evaluate(
         subgoals_done = (
             subgoals_achieved  # subgoals achieved
             | (current_subgoals_steps == args.time_scale)  # subgoals time up
-            | (1.0 - masks).byte()  # episode is done
+            | (1.0 - masks).bool()  # episode is done
         )
         subgoals_done = subgoals_done.float()
         subgoals_achieved = subgoals_achieved.float()
@@ -1191,7 +1191,7 @@ def main():
             subgoals_done = (
                 subgoals_achieved  # subgoals achieved
                 | (current_subgoals_steps == args.time_scale)  # subgoals time up
-                | (1.0 - masks).byte()  # episode is done
+                | (1.0 - masks).bool()  # episode is done
             )
             subgoals_done = subgoals_done.float()
             subgoals_achieved = subgoals_achieved.float()
