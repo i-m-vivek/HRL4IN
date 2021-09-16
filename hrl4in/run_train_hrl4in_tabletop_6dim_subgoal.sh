@@ -51,5 +51,5 @@ python -u train_hrl4in_tabletop_6dim_subgoal.py \
    --meta-gamma 0.99 \
    --checkpoint-interval 10 \
    --checkpoint-index -1 \
-   --config-file "tiago_tabletop_hrl4in.yaml" \
+   --config-file "tiago_tabletop_hrl4in_6dim_subgoal.yaml" \
    --num-eval-episodes 1
