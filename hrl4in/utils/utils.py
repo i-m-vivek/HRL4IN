@@ -38,6 +38,19 @@ def batch_obs(observations):
         batch[sensor] = torch.tensor(np.array(batch[sensor]), dtype=torch.float)
     return batch
 
+def rotate_torch_vector_base_arm(vector, roll, pitch, yaw):
+    """
+    This can be used to rotate torch vector with base pos (x, y, z) and end effector pos (x, y, z)
+    vector: (num_envs, x, y, z, x, y, z)
+    """
+    base = vector[:, :3]
+    arm = vector[:, 3:]
+
+    base =  rotate_torch_vector(base, roll, pitch, yaw)
+    arm = rotate_torch_vector(arm, roll, pitch, yaw)
+
+    vector = torch.cat([base, arm], axis=-1)
+    return vector
 
 def rotate_torch_vector(vector, roll, pitch, yaw):
     num_envs = vector.shape[0]
