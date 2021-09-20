@@ -50,6 +50,7 @@ python -u train_hrl4in_tabletop_6dim_subgoal.py \
    --extrinsic-collision-reward-weight $ext_col \
    --meta-gamma 0.99 \
    --use-pretrained-ll-policy \
+   --pretrained-ll-policy-path "ppo_tiago_tabletop_hrl4in_ss/ckpt/ckpt.25730.pth" \
    --checkpoint-interval 10 \
    --checkpoint-index -1 \
    --config-file "tiago_tabletop_hrl4in_6dim_subgoal.yaml" \
