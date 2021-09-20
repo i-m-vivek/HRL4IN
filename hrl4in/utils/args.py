@@ -148,7 +148,12 @@ def add_hrl_args(parser):
         default=False,
         help="whether to normalize advantage for meta agent",
     )
-
+    group.add_argument(
+        "--use-pretrained-ll-policy",
+        action="store_true",
+        default=False,
+        help="whether to use pretrained ll policy",
+    )
 
 def add_common_args(parser):
     group = parser.add_argument_group("common")
