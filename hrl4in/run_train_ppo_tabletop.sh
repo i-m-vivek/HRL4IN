@@ -27,7 +27,7 @@ python -u train_ppo_tabletop.py \
    --use-linear-clip-decay \
    --entropy-coef 0.01 \
    --log-interval 1 \
-   --experiment-folder "ckpt/ppo_tiago_tabletop_hrl4in_ss" \
+   --experiment-folder "ckpt/ppo_tiago_tabletop_electricity_hrl4in_ss" \
    --checkpoint-interval 10 \
    --checkpoint-index -1 \
    --config-file "tiago_tabletop.yaml" \
