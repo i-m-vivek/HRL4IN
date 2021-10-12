@@ -379,7 +379,7 @@ def main():
     args = parser.parse_args()
 
     ckpt_folder, ckpt_path, start_epoch, start_env_step, summary_folder, log_file = \
-        set_up_experiment_folder(args.experiment_folder, args.checkpoint_index)
+        set_up_experiment_folder(args.experiment_folder, args.checkpoint_index, False)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
