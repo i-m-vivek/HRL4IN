@@ -379,7 +379,7 @@ def main():
     args = parser.parse_args()
 
     ckpt_folder, ckpt_path, start_epoch, start_env_step, summary_folder, log_file = \
-        set_up_experiment_folder(args.experiment_folder, args.checkpoint_index)
+        set_up_experiment_folder(args.experiment_folder, args.checkpoint_index, args.use_checkpoint)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -544,11 +544,11 @@ def main():
     )
 
     # load pretrained LL policy
-    load_pretrained_ll_policy = False
+    load_pretrained_ll_policy = True
     if load_pretrained_ll_policy:
-        ckpt = torch.load(ckpt_path, map_location=device)
+        ckpt = torch.load("/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/ckpt/ppo_doorenv_hrl4in_ss_run1/ckpt/ckpt.5780.pth", map_location=device)
         agent.load_state_dict(ckpt["state_dict"])
-        logger.info("loaded checkpoint: {}".format(ckpt_path))
+        logger.info("loaded checkpoint: {}".format("/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/ckpt/ppo_doorenv_hrl4in_ss_run1/ckpt/ckpt.5780.pth"))
     elif ckpt_path is not None:
         ckpt = torch.load(ckpt_path, map_location=device)
         agent.load_state_dict(ckpt["state_dict"])

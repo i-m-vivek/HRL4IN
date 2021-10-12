@@ -96,7 +96,7 @@ def rotate_torch_vector(vector, roll, pitch, yaw):
     return vector
 
 
-def set_up_experiment_folder(folder, ckpt_idx, use_checkpoint):
+def set_up_experiment_folder(folder, ckpt_idx, use_checkpoint=False):
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
