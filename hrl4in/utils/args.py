@@ -1,11 +1,11 @@
 def add_env_args(parser):
     group = parser.add_argument_group("env")
-    # group.add_argument(
-    #     "--env-type",
-    #     required=True,
-    #     help="env type: [gibson|interactive_gibson|toy]",
-    #     choices=["gibson", "interactive_gibson", "toy"]
-    # )
+    group.add_argument(
+        "--env-type",
+        required=False,
+        help="env type: [gibson|interactive_gibson|toy]",
+        choices=["gibson", "interactive_gibson", "toy"]
+    )
     group.add_argument(
         "--config-file",
         required=True,
