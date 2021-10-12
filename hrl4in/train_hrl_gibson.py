@@ -547,7 +547,7 @@ def main():
     load_pretrained_ll_policy = True
     if load_pretrained_ll_policy:
         ckpt = torch.load("/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/ckpt/ppo_doorenv_hrl4in_ss_run1/ckpt/ckpt.5780.pth", map_location=device)
-        agent.load_state_dict(ckpt["state_dict"])
+        agent.load_state_dict(ckpt["state_dict"], strict=False) # the pretrained PPO policy does not have subgoal related inputs so we need to tweak this.
         logger.info("loaded checkpoint: {}".format("/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/ckpt/ppo_doorenv_hrl4in_ss_run1/ckpt/ckpt.5780.pth"))
     elif ckpt_path is not None:
         ckpt = torch.load(ckpt_path, map_location=device)
