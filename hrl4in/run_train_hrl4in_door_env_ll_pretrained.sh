@@ -48,7 +48,6 @@ python -u train_hrl_gibson.py \
    --meta-agent-normalize-advantage \
    --extrinsic-collision-reward-weight $ext_col \
    --meta-gamma 0.99 \
-   --use-checkpoint \
    --checkpoint-interval 10 \
    --checkpoint-index -1 \
    --env-type "interactive_gibson" \
