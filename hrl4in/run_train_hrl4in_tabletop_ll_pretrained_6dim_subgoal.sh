@@ -18,10 +18,10 @@ ext_col="0.0"         # 0.0, 0.5, 1.0, 2.0
 name="exp"
 run="0"
 
-log_dir="hrl4in_tiago_tabletop_ll_pretrained_6dim_subgoal_hrl4in_ss_hrl_reward_"$reward_type"_pos_"$pos"_sgm_arm_world_irs_"$irs"_sgr_"$sgr"_lr_"$lr"_meta_lr_"$meta_lr"_fr_lr_"$fr_lr"_death_"$death"_init_std_"$init_std_dev_xy"_"$init_std_dev_xy"_"$init_std_dev_z"_failed_pnt_"$failed_pnt"_nsteps_"$num_steps"_ext_col_"$ext_col"_6x6_from_scr_"$name"_run_"$run
+log_dir="hrl4in_tabletop_6dim_subgoal_ifelse"
 echo $log_dir
 
-python -u train_hrl4in_tabletop_6dim_subgoal.py \
+python -u train_hrl4in_tabletop_6dim_subgoal_ifelse.py \
    --use-gae \
    --sim-gpu-id $gpu \
    --pth-gpu-id $gpu \

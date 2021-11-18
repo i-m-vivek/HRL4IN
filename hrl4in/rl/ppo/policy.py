@@ -19,16 +19,28 @@ class Policy(nn.Module):
                  observation_space,
                  action_space,
                  hidden_size=512,
+                 subgoal_only=False,
                  cnn_layers_params=None,
                  initial_stddev=1.0 / 3.0,
                  min_stddev=0.0,
                  stddev_anneal_schedule=None,
                  stddev_transform=torch.nn.functional.softplus):
+
+        """
+        subgoal_only: In HRL4IN for the LL policy, HRL4IN guys use subgoal, subgoal_mask & action_mask, 
+        but if you only train PPO it will not have any of these three it will only be having a 
+            - sensor (6 dim, base + EE) | concat(target_position - current_base_pos, target_pos - current_ee_pos)  
+            - task_obs (3 dim) | target_pos (x, y, z)
+            - auxiliary_sensor
+            - depth
+        In above 4, we can replace the task_obs with the subgoal (3 dim). 
+        """
         super().__init__()
         self.net = Net(
             observation_space=observation_space,
             hidden_size=hidden_size,
             cnn_layers_params=cnn_layers_params,
+            subgoal_only = subgoal_only
         )
         self.stddev_anneal_schedule = stddev_anneal_schedule
         if stddev_anneal_schedule is not None:

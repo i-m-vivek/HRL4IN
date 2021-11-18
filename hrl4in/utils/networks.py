@@ -26,11 +26,12 @@ class Net(nn.Module):
         self,
         observation_space,
         hidden_size,
+        subgoal_only= False,
         single_branch_size=256,
         cnn_layers_params=None,
     ):
         super().__init__()
-
+        self.subgoal_only = subgoal_only # task_obs takes the subgoal input
         if "sensor" in observation_space.spaces:
             self._n_non_vis_sensor = observation_space.spaces["sensor"].shape[0]
         else:
@@ -53,19 +54,25 @@ class Net(nn.Module):
         else:
             self._n_scan = 0
 
-        if "subgoal" in observation_space.spaces:
-            self._n_subgoal = observation_space.spaces["subgoal"].shape[0]
-        else:
+        if self.subgoal_only == False:
+            if "subgoal" in observation_space.spaces:
+                self._n_subgoal = observation_space.spaces["subgoal"].shape[0]
+            else:
+                self._n_subgoal = 0
+            
+            if "subgoal_mask" in observation_space.spaces:
+                self._n_subgoal_mask = observation_space.spaces["subgoal_mask"].shape[0]
+            else:
+                self._n_subgoal_mask = 0
+
+            if "action_mask" in observation_space.spaces:
+                self._n_action_mask = observation_space.spaces["action_mask"].shape[0]
+            else:
+                self._n_action_mask = 0
+        
+        else: 
             self._n_subgoal = 0
-
-        if "subgoal_mask" in observation_space.spaces:
-            self._n_subgoal_mask = observation_space.spaces["subgoal_mask"].shape[0]
-        else:
             self._n_subgoal_mask = 0
-
-        if "action_mask" in observation_space.spaces:
-            self._n_action_mask = observation_space.spaces["action_mask"].shape[0]
-        else:
             self._n_action_mask = 0
 
         self._n_additional_rnn_input = (
@@ -333,8 +340,11 @@ class Net(nn.Module):
             additional_rnn_input = []
             if self._n_non_vis_sensor > 0:
                 additional_rnn_input.append(observations["sensor"])
-            if self._n_task_obs > 0:
-                additional_rnn_input.append(observations["task_obs"])
+            if self._n_task_obs > 0: # if we consider the subgoal only, we replace task_obs with the subgoal.
+                if self.subgoal_only:
+                    additional_rnn_input.append(observations["subgoal"])
+                else:
+                    additional_rnn_input.append(observations["task_obs"])
             if self._n_auxiliary_sensor > 0:
                 additional_rnn_input.append(observations["auxiliary_sensor"])
             if self._n_scan > 0:
