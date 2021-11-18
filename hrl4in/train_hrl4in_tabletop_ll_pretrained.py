@@ -2,7 +2,7 @@
 
 from time import time
 from collections import deque
-import os 
+import os
 import random
 import numpy as np
 import argparse
@@ -18,6 +18,7 @@ from hrl4in.utils.utils import *
 from hrl4in.utils.args import *
 
 import gibson2
+
 # from gibson2.envs.parallel_env import ParallelNavEnvironment
 # from gibson2.envs.locomotor_env import (
 #     NavigateEnv,
@@ -557,7 +558,9 @@ def main():
         start_env_step,
         summary_folder,
         log_file,
-    ) = set_up_experiment_folder(args.experiment_folder, args.checkpoint_index, args.use_checkpoint)
+    ) = set_up_experiment_folder(
+        args.experiment_folder, args.checkpoint_index, args.use_checkpoint
+    )
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -670,7 +673,7 @@ def main():
     # if args.env_type == "gibson" or args.env_type == "interactive_gibson":
     cnn_layers_params = [(32, 8, 4, 0), (64, 4, 2, 0), (64, 3, 1, 0)]
     # elif args.env_type == "toy":
-        # cnn_layers_params = [(32, 3, 1, 1), (32, 3, 1, 1), (32, 3, 1, 1)]
+    # cnn_layers_params = [(32, 3, 1, 1), (32, 3, 1, 1), (32, 3, 1, 1)]
 
     meta_observation_space = train_envs.observation_space
     sensor_space = train_envs.observation_space.spaces[
@@ -1233,7 +1236,8 @@ def main():
 
             if args.use_action_hindsight:
                 hindsight_subgoals = (
-                    next_obs_batch["sensor"][:, :3] - meta_step_observation["sensor"][:, :3]
+                    next_obs_batch["sensor"][:, :3]
+                    - meta_step_observation["sensor"][:, :3]
                 )
                 (
                     _,
