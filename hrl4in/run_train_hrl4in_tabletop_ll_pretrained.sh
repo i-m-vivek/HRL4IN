@@ -21,7 +21,7 @@ run="0"
 log_dir="train_hrl4in_tabletop_ll_pretrained"
 echo $log_dir
 
-python -u train_hrl4in_tabletop_6dim_subgoal_ll_pretrained.py \
+python -u train_hrl4in_tabletop_ll_pretrained.py \
    --use-gae \
    --sim-gpu-id $gpu \
    --pth-gpu-id $gpu \
