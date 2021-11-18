@@ -18,10 +18,10 @@ ext_col="0.0"         # 0.0, 0.5, 1.0, 2.0
 name="exp"
 run="0"
 
-log_dir="hrl4in_tabletop_6dim_subgoal_ifelse"
+log_dir="hrl4in_tabletop_6dim_subgoal_ll_pretrained"
 echo $log_dir
 
-python -u train_hrl4in_tabletop_6dim_subgoal_ifelse.py \
+python -u train_hrl4in_tabletop_6dim_subgoal_ll_pretrained.py \
    --use-gae \
    --sim-gpu-id $gpu \
    --pth-gpu-id $gpu \
