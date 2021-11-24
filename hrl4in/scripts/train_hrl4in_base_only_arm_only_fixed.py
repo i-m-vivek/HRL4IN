@@ -620,7 +620,7 @@ def main():
         logger.info("{}: {}".format(p, getattr(args, p)))
 
     config_file = os.path.join(
-        os.path.dirname(gibson2.__file__), "../igibson_usage/configs", args.config_file
+        os.path.dirname(gibson2.__file__), "../igibson_usage/new_configs", args.config_file
     )
     assert os.path.isfile(config_file), "config file does not exist: {}".format(
         config_file
@@ -700,7 +700,7 @@ def main():
         low=-np.inf, high=np.inf, shape=(3, ), dtype=np.float32
     )
     ll_observation_space = gym.spaces.Dict(ll_observation_space)
-
+    print("\n\n LL Obs Space: ", ll_observation_space)
     subgoal_tolerance = torch.tensor(1.0 / 3.0, dtype=torch.float32, device=device)
 
     meta_actor_critic = MetaPolicy(

@@ -50,5 +50,5 @@ python -u train_hrl4in_base_only_arm_only_fixed.py \
    --meta-gamma 0.99 \
    --checkpoint-interval 10 \
    --checkpoint-index -1 \
-   --config-file "tiago_tabletop_hrl4in.yaml" \
+   --config-file "tiago_tabletop_hrl4in_base_only_arm_only_fixed.yaml" \
    --num-eval-episodes 1
