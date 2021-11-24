@@ -692,7 +692,7 @@ def main():
     subgoal_mask_choices[1, 3:] = 1.0
 
     # observation_space - used for rollouts, 6D subgoals 
-    observation_space = train_envs.observation_space.spaces.copy()
+    observation_space = gym.spaces.Dict(train_envs.observation_space.spaces.copy())
 
     # ll_observation space -> change the sensor dim to 3D, used for our base and arm policy
     ll_observation_space = train_envs.observation_space.spaces.copy()
