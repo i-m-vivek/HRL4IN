@@ -780,7 +780,7 @@ def main():
 
     # load pretrained LL policy
     base_ckpt_path = "/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/scripts/ckpt/ppo_tiago_base_reaching_without_orn/ckpt/ckpt.2200.pth"
-    arm_ckpt_path = "/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/scripts/ckpt/ppo_tiago_arm_reaching/ckpt.2700.pth"
+    arm_ckpt_path = "/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/scripts/ckpt/ppo_tiago_arm_reaching/ckpt/ckpt.2700.pth"
     
     ckpt = torch.load(base_ckpt_path, map_location=device)
     base_agent.load_state_dict(ckpt["state_dict"])
