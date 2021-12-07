@@ -210,7 +210,11 @@ def evaluate(
             recurrent_hidden_states = (1 - action_mask_indices)*base_recurrent_hidden_states+ action_mask_indices*arm_recurrent_hidden_states
 
             actions_masked = actions * current_action_masks
-
+        
+        if not eval_only:
+            writer.add_scalar(
+                "eval/action_mask", action_mask_indices.item()
+            )
         actions_np = actions_masked.cpu().numpy()
         outputs = envs.step(actions_np)
 
@@ -779,7 +783,7 @@ def main():
     )
 
     # load pretrained LL policy
-    base_ckpt_path = "/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/scripts/ckpt/ppo_tiago_base_reaching_without_orn/ckpt/ckpt.2200.pth"
+    base_ckpt_path = "/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/scripts/ckpt/ppo_tiago_base_reaching_without_orn/ckpt/ckpt.12000.pth"
     arm_ckpt_path = "/home/guest/vivek_ws/iGibson/HRL4IN/hrl4in/scripts/ckpt/ppo_tiago_arm_reaching/ckpt/ckpt.2700.pth"
     
     ckpt = torch.load(base_ckpt_path, map_location=device)
