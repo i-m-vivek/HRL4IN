@@ -146,9 +146,9 @@ def evaluate(
             # pitch = batch["auxiliary_sensor"][:, 4] * np.pi
             # yaw = batch["auxiliary_sensor"][:, 84] * np.pi
             
-            roll = batch["auxiliary_sensor"][:, 3]
-            pitch = batch["auxiliary_sensor"][:, 4]
-            yaw = batch["auxiliary_sensor"][:, 84]
+            roll = batch["auxiliary_sensor"][:, 3].item() 
+            pitch = batch["auxiliary_sensor"][:, 4].item() 
+            yaw = batch["auxiliary_sensor"][:, 84].item() 
 
             temp_current_subgoals = current_subgoals.clone()
             temp_current_subgoals = temp_current_subgoals.view(-1, 2, 3)
@@ -160,12 +160,19 @@ def evaluate(
             temp_current_subgoals = torch.sum(temp_current_subgoals, 1)
 
             robot_pos =batch["auxiliary_sensor"][:, 0:3]
-            local_subgoal = temp_current_subgoals.copy()
+            
+            robot_pos_cpu = robot_pos.clone()
+            robot_pos_cpu = robot_pos_cpu.cpu().numpy()  
+            
+            temp_current_subgoals_cpu = temp_current_subgoals.clone()
+            temp_current_subgoals_cpu = temp_current_subgoals_cpu.cpu().numpy()
+            
+            local_subgoal = np.zeros(temp_current_subgoals.shape)
+            for idx in range(temp_current_subgoals.size(0)):
+                local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals_cpu[idx] - robot_pos_cpu[idx], roll, pitch, yaw)
 
-            for idx in  range(temp_current_subgoals.size(0)):
-                local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals[idx] - robot_pos[idx], roll, pitch, yaw)
             # local_subgoal = rotate_torch_vector(temp_current_subgoals - robot_pos, roll, pitch, yaw)
-
+            local_subgoal = torch.tensor(local_subgoal).cuda()
             batch["auxiliary_sensor"][:, 87:90] = local_subgoal
             batch["auxiliary_sensor"][:, 90:93] = temp_current_subgoals
 
@@ -1059,9 +1066,9 @@ def main():
                 # roll = step_observation["auxiliary_sensor"][:, 3] * np.pi
                 # pitch = step_observation["auxiliary_sensor"][:, 4] * np.pi
                 # yaw = step_observation["auxiliary_sensor"][:, 84] * np.pi
-                roll = rollouts.observations["auxiliary_sensor"][-1][:, 3]
-                pitch = rollouts.observations["auxiliary_sensor"][-1][:, 4]
-                yaw = rollouts.observations["auxiliary_sensor"][-1][:, 84]
+                roll = step_observation["auxiliary_sensor"][:, 3].item()
+                pitch = step_observation["auxiliary_sensor"][:, 4].item()
+                yaw = step_observation["auxiliary_sensor"][:, 84].item()
                 
                 # mask observation and add current subgoal
                 temp_current_subgoals = current_subgoals.clone()
@@ -1075,12 +1082,18 @@ def main():
                 
                 robot_pos = step_observation["auxiliary_sensor"][:, 0:3]
                 
-                local_subgoal = temp_current_subgoals.copy()
-                for idx in  range(temp_current_subgoals.size(0)):
-                    local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals[idx] - robot_pos[idx], roll, pitch, yaw)
+                robot_pos_cpu = robot_pos.clone()
+                robot_pos_cpu = robot_pos_cpu.cpu().numpy()  
+                
+                temp_current_subgoals_cpu = temp_current_subgoals.clone()
+                temp_current_subgoals_cpu = temp_current_subgoals_cpu.cpu().numpy()
+                
+                local_subgoal = np.zeros(temp_current_subgoals.shape)
+                for idx in range(temp_current_subgoals.size(0)):
+                    local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals_cpu[idx] - robot_pos_cpu[idx], roll, pitch, yaw)
 
                 # local_subgoal = rotate_torch_vector(temp_current_subgoals - robot_pos, roll, pitch, yaw)
-                
+                local_subgoal = torch.tensor(local_subgoal).cuda()
                 step_observation["auxiliary_sensor"][:, 87:90] = local_subgoal
                 step_observation["auxiliary_sensor"][:, 90:93] = temp_current_subgoals
 
@@ -1425,9 +1438,9 @@ def main():
             # roll = rollouts.observations["auxiliary_sensor"][-1][:, 3] * np.pi
             # pitch = rollouts.observations["auxiliary_sensor"][-1][:, 4] * np.pi
             # yaw = rollouts.observations["auxiliary_sensor"][-1][:, 84] * np.pi
-            roll = rollouts.observations["auxiliary_sensor"][-1][:, 3]
-            pitch = rollouts.observations["auxiliary_sensor"][-1][:, 4]
-            yaw = rollouts.observations["auxiliary_sensor"][-1][:, 84]
+            roll = rollouts.observations["auxiliary_sensor"][-1][:, 3].item()
+            pitch = rollouts.observations["auxiliary_sensor"][-1][:, 4].item()
+            yaw = rollouts.observations["auxiliary_sensor"][-1][:, 84].item()
 
             temp_current_subgoals = current_subgoals.clone()
             temp_current_subgoals = temp_current_subgoals.view(-1, 2, 3)
@@ -1439,15 +1452,23 @@ def main():
             temp_current_subgoals = torch.sum(temp_current_subgoals, 1)
             
             robot_pos = rollouts.observations["auxiliary_sensor"][-1][:, 0:3]
-            local_subgoal = temp_current_subgoals.copy()
-            for idx in  range(temp_current_subgoals.size(0)):
-                local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals[idx] - robot_pos[idx], roll, pitch, yaw)
+            
+            robot_pos_cpu = robot_pos.clone()
+            robot_pos_cpu = robot_pos_cpu.cpu().numpy()  
+            
+            temp_current_subgoals_cpu = temp_current_subgoals.clone()
+            temp_current_subgoals_cpu = temp_current_subgoals_cpu.cpu().numpy()
+            
+            local_subgoal = np.zeros(temp_current_subgoals.shape)
+            for idx in range(temp_current_subgoals.size(0)):
+                local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals_cpu[idx] - robot_pos_cpu[idx], roll, pitch, yaw)
             # local_subgoal = rotate_torch_vector(temp_current_subgoals - robot_pos, roll, pitch, yaw)
             
             # current_subgoals_rotated = rotate_torch_vector(
                 # current_subgoals, roll, pitch, yaw
             # )
             # current_subgoals_observation = current_subgoals_rotated
+            local_subgoal = torch.tensor(local_subgoal).cuda()
             last_observation["auxiliary_sensor"][:, 87:90] = local_subgoal
             last_observation["auxiliary_sensor"][:, 90:93] = temp_current_subgoals
 
