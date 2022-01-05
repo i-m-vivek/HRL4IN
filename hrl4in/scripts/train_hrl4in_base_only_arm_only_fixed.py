@@ -162,7 +162,7 @@ def evaluate(
             robot_pos =batch["auxiliary_sensor"][:, 0:3]
             local_subgoal = temp_current_subgoals.copy()
 
-            for idx in  temp_current_subgoals.size(0):
+            for idx in  range(temp_current_subgoals.size(0)):
                 local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals[idx] - robot_pos[idx], roll, pitch, yaw)
             # local_subgoal = rotate_torch_vector(temp_current_subgoals - robot_pos, roll, pitch, yaw)
 
@@ -1076,7 +1076,7 @@ def main():
                 robot_pos = step_observation["auxiliary_sensor"][:, 0:3]
                 
                 local_subgoal = temp_current_subgoals.copy()
-                for idx in  temp_current_subgoals.size(0):
+                for idx in  range(temp_current_subgoals.size(0)):
                     local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals[idx] - robot_pos[idx], roll, pitch, yaw)
 
                 # local_subgoal = rotate_torch_vector(temp_current_subgoals - robot_pos, roll, pitch, yaw)
@@ -1440,7 +1440,7 @@ def main():
             
             robot_pos = rollouts.observations["auxiliary_sensor"][-1][:, 0:3]
             local_subgoal = temp_current_subgoals.copy()
-            for idx in  temp_current_subgoals.size(0):
+            for idx in  range(temp_current_subgoals.size(0)):
                 local_subgoal[idx, :] = rotate_vector_3d(temp_current_subgoals[idx] - robot_pos[idx], roll, pitch, yaw)
             # local_subgoal = rotate_torch_vector(temp_current_subgoals - robot_pos, roll, pitch, yaw)
             
